@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Прогресс пользователей</title>
+</head>
+<style>
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f0f2f5;
+    margin: 0;
+    padding: 20px;
+}
+
+.users-progress {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: white;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+h2 {
+    color: #2c3e50;
+    margin-bottom: 25px;
+    font-size: 24px;
+    text-align: center;
+}
+
+.progress-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: 20px 0;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.progress-table th,
+.progress-table td {
+    padding: 15px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.progress-table th {
+    background-color: #3498db;
+    color: white;
+    font-weight: 500;
+    text-transform: uppercase;
+    font-size: 14px;
+}
+
+.progress-table tr:last-child td {
+    border-bottom: none;
+}
+
+.progress-table tr:hover {
+    background-color: #f8f9fa;
+    transition: background-color 0.2s ease;
+}
+
+.progress-table td div {
+    margin: 5px 0;
+    padding: 5px 10px;
+    background: #f1f9ff;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.progress-table td:nth-child(4) div {
+    background: #e8f5e9;
+    color: #2e7d32;
+    font-weight: bold;
+}
+</style>
+<body>
+
+{% block content %}
+<div class="users-progress">
+    <h2>Прогресс пользователей</h2>
+    
+    <table class="progress-table">
+        <thead>
+            <tr>
+                <th>Пользователь</th>
+                <th>Курсы</th>
+                <th>Прогресс</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+                {% if user.profile.role == 'operator' %}
+                <tr>
+                    <td>{{ user.username }}</td>
+                    <td>
+                        {% for progress in user.progress_set.all %}
+                            <div>{{ progress.course.title }}</div>
+                        {% endfor %}
+                    </td>
+                    <td>
+                        {% for progress in user.progress_set.all %}
+                            <div>{{ progress.percentage }}%</div>
+                        {% endfor %}
+                    </td>
+                </tr>
+                {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+</body>
+</html>

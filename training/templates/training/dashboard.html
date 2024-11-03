@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Training Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f7fa;
+            color: #2c3e50;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #7f8c8d;
+            font-weight: 400;
+        }
+        h3 {
+            color: #3498db;
+            margin-top: 30px;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        li {
+            padding: 15px;
+            margin: 10px 0;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border-left: 4px solid #3498db;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .progress {
+            color: #27ae60;
+            font-weight: 500;
+        }
+        .role-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            background: #3498db;
+            color: white;
+            border-radius: 15px;
+            font-size: 0.9em;
+        }
+        li:hover {
+            background: #edf2f7;
+            transform: translateX(5px);
+            transition: all 0.2s ease;
+        }
+        .course-link {
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+        .course-link:hover li {
+            background: #edf2f7;
+            transform: translateX(5px);
+            transition: all 0.2s ease;
+        }
+        .admin-button {
+            background-color: #2c3e50;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 4px;
+            text-decoration: none;
+            display: inline-block;
+            margin: 10px;
+        }
+
+        .admin-button:hover {
+            background-color: #34495e;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Личный кабинет {{ user.username }}</h1>
+        <h2>Роль: <span class="role-badge">{{ profile.role }}</span></h2>
+
+        {% if profile.role == 'operator' %}
+            <h3>Ваши курсы</h3>
+            
+            <ul>
+                {% for course in courses %}
+                    <a href="{% url 'course_detail' course.id %}" class="course-link">
+                        <li>
+                            <span>{{ course.title }}</span>
+                            <span class="progress">Прогресс: {{ course.progress }}%</span>
+                        </li>
+                    </a>
+                {% endfor %}
+            </ul>
+            
+            
+        {% elif profile.role == 'instructor' %}
+            <h3>Курсы, которые вы ведете</h3>
+            <ul>
+                {% for course in courses %}
+                <a href="{% url 'course_detail' course.id %}" class="course-link">
+                    <li>
+                        <span>{{ course.title }}</span>
+                        <span class="progress">Прогресс: {{ course.progress }}%</span>
+                    </li>
+                </a>
+                {% endfor %}
+            </ul>
+        {% elif profile.role == 'admin' %}
+            <div class="admin-link">
+                <a href="{% url 'admin:index' %}" class="admin-button">
+                    Админ-панель
+                </a>
+                <a href="{% url 'users_progress' %}" class="admin-button">
+                    Прогресс пользователей
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>
