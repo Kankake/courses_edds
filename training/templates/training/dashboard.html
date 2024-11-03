@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Training Dashboard</title>
+    <title>Главная страница</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
         body {
@@ -99,7 +99,11 @@
 
         {% if profile.role == 'operator' %}
             <h3>Ваши курсы</h3>
-            
+            <div class="admin-link">
+                <a href="{% url 'course_list' %}" class="admin-button">
+                    Все курсы
+                </a>
+            </div>
             <ul>
                 {% for course in courses %}
                     <a href="{% url 'course_detail' course.id %}" class="course-link">
@@ -126,12 +130,13 @@
             </ul>
         {% elif profile.role == 'admin' %}
             <div class="admin-link">
-                <a href="{% url 'admin:index' %}" class="admin-button">
+                <a href="{% url 'admin_dashboard' %}" class="admin-button">
                     Админ-панель
                 </a>
                 <a href="{% url 'users_progress' %}" class="admin-button">
                     Прогресс пользователей
                 </a>
+                
             </div>
         {% endif %}
     </div>

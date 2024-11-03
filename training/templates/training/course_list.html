@@ -65,8 +65,14 @@
                     <h1>{{ course }}</h1>
                 </div>
                 <a href="{% url 'course_detail' course.id %}"></a>
-            </div>
-        {% endfor %}
+                {% for quiz in course.quizzes.all %}
+                    <a href="{% url 'take_quiz' quiz.id %}">Пройти тест: {{ quiz.title }}</a>
+                {% empty %}
+                    <p>Тест для этого курса еще не создан.</p>
+                {% endfor %}
+
+                    </div>
+                {% endfor %}
     </div>
 </body>
 </html>

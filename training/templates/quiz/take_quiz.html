@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ quiz.title }}</title>
+</head>
+<body>
+    <h2>Тест: {{ quiz.title }}</h2>
+    <form method="post">
+        {% csrf_token %}
+        {% for question in quiz.questions.all %}
+            <fieldset>
+                <legend>{{ question.text }}</legend>
+                {% for answer in question.answers.all %}
+                    <label>
+                        <input type="radio" name="{{ question.id }}" value="{{ answer.id }}">
+                        {{ answer.text }}
+                    </label><br>
+                {% endfor %}
+            </fieldset>
+        {% endfor %}
+        <button type="submit">Завершить тест</button>
+    </form>
+</body>
+</html>

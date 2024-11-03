@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Добавить вопрос</title>
+</head>
+<body>
+    <h2>Добавить вопрос к тесту: {{ quiz.title }}</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ question_form.as_p }}
+        <button type="submit">Добавить вопрос</button>
+    </form>
+</body>
+</html>

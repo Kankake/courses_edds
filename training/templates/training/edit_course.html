@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Редактирование курса</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container { 
+            max-width: 700px; 
+            margin: 40px auto;
+            padding: 30px;
+            border-radius: 12px;
+            background-color: white;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
+        }
+        h2 { 
+            text-align: center;
+            color: #1a73e8;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+        .form-group { 
+            margin-bottom: 25px;
+        }
+        label { 
+            font-weight: 500;
+            margin-bottom: 8px;
+            display: block;
+            color: #444;
+            font-size: 16px;
+        }
+        .form-control { 
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            transition: border-color 0.3s ease;
+        }
+        .form-control:focus {
+            outline: none;
+            border-color: #1a73e8;
+        }
+        button { 
+            padding: 12px 24px;
+            font-size: 16px;
+            color: white;
+            background-color: #1a73e8;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            width: 100%;
+            margin-top: 20px;
+        }
+        button:hover { 
+            background-color: #1557b0;
+        }
+        a {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #1a73e8;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Редактирование курса</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Сохранить изменения</button>
+    </form>
+    <a href="{% url 'admin_dashboard' %}">Назад к панели администратора</a>
+</div>
+</body>
+</html>

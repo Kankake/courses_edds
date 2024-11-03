@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Панель инструктора</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #34495e;
+            margin: 20px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f8f9fa;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+        a {
+            color: #3498db;
+            text-decoration: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+        a:hover {
+            background-color: #3498db;
+            color: white;
+        }
+        .action-links {
+            display: flex;
+            gap: 10px;
+        }
+        .add-lecture-btn {
+            display: inline-block;
+            background-color: #2ecc71;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        .add-lecture-btn:hover {
+            background-color: #27ae60;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Панель инструктора</h1>
+
+        <h2>Ваши курсы</h2>
+        <table>
+            <tr>
+                <th>Название курса</th>
+                <th>Описание</th>
+                <th>Студенты</th>
+                <th>Действия</th>
+            </tr>
+            {% for course in courses %}
+            <tr>
+                <td>{{ course.title }}</td>
+                <td>{{ course.description }}</td>
+                <td>
+                    {% for student in course.students.all %}
+                        <span class="student-name">{{ student.username }}{% if not forloop.last %}, {% endif %}</span>
+                    {% endfor %}
+                </td>
+                <td class="action-links">
+                    <a href="{% url 'edit_course' course.id %}">Редактировать</a>
+                    <a href="{% url 'create_lecture' course.id %}" class="add-lecture-btn">Добавить лекцию</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</body>
+</html>
