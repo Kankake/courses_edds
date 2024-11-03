@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Добавить варианты ответов</title>
+</head>
+<body>
+    <h2>Добавить варианты ответов к вопросу: {{ question.text }}</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ answer_form.as_p }}
+        <button type="submit">Добавить вариант ответа</button>
+    </form>
+</body>
+</html>

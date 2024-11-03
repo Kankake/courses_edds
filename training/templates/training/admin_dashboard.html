@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Панель администратора</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background-color: #f5f7fa;
+            margin: 0;
+            padding: 20px;
+            color: #2d3748;
+        }
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        h1 { 
+            text-align: center; 
+            color: #2d3748;
+            font-size: 2.2em;
+            margin-bottom: 40px;
+        }
+        h2 {
+            color: #4a5568;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 10px;
+            margin-top: 40px;
+        }
+        table { 
+            width: 100%; 
+            border-collapse: separate;
+            border-spacing: 0;
+            margin: 20px 0;
+        }
+        th, td { 
+            padding: 15px;
+            border: 1px solid #e2e8f0;
+        }
+        th { 
+            background-color: #f8fafc;
+            font-weight: 600;
+            text-align: left;
+        }
+        tr:hover {
+            background-color: #f8fafc;
+        }
+        .actions { 
+            margin-top: 30px;
+        }
+        a {
+            text-decoration: none;
+            color: #4299e1;
+            transition: color 0.2s;
+        }
+        a:hover {
+            color: #2b6cb0;
+        }
+        .actions a {
+            background-color: #4299e1;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 6px;
+            display: inline-block;
+        }
+        .actions a:hover {
+            background-color: #2b6cb0;
+        }
+        td a {
+            background-color: #edf2f7;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        td a:hover {
+            background-color: #e2e8f0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Панель администратора</h1>
+
+        <h2>Курсы</h2>
+        <table>
+            <tr>
+                <th>Название курса</th>
+                <th>Описание</th>
+                <th>Инструктор</th>
+                <th>Действия</th>
+            </tr>
+            {% for course in courses %}
+            <tr>
+                <td>{{ course.title }}</td>
+                <td>{{ course.description }}</td>
+                <td>{{ course.instructor.username }}</td>
+                <td><a href="{% url 'edit_course' course.id %}">Редактировать</a></td>
+            </tr>
+            {% endfor %}
+        </table>
+        <div class="actions">
+            <a href="{% url 'create_course' %}">Добавить новый курс</a>
+        </div>
+
+        <h2>Пользователи</h2>
+        <table>
+            <tr>
+                <th>Имя пользователя</th>
+                <th>Роль</th>
+            </tr>
+            {% for user in users %}
+            <tr>
+                <td>{{ user.user.username }}</td>
+                <td>{{ user.role }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</body>
+</html>

@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
-from .models import Course, Lecture, Test, Question, Progress, Profile
+from .models import Course, Lecture, Test, Question, Progress, Profile, Quiz, Answer
 
 class ProfileInline(admin.StackedInline):
     model = Profile
@@ -23,3 +23,6 @@ admin.site.register(Lecture)
 admin.site.register(Test)
 admin.site.register(Question)
 admin.site.register(Progress)
+admin.site.register(Profile)
+admin.site.register(Quiz)
+admin.site.register(Answer)
