@@ -11,6 +11,22 @@
             background-color: #f5f5f5;
         }
 
+        .profile-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background-color: #3498db;
+            color: white;
+            border-radius: 5px;
+            text-decoration: none;
+            transition: background-color 0.2s ease;
+        }
+
+        .profile-button:hover {
+            background-color: #2980b9;
+        }
+
         h1 {
             color: #2c3e50;
             text-align: center;
@@ -57,6 +73,7 @@
     </style>
 </head>
 <body>
+    <a href="{% url 'dashboard' %}" class="profile-button">Профиль</a>
     <h1>Доступные курсы</h1>
     <div class="course-grid">
         {% for course in courses %}
@@ -65,14 +82,8 @@
                     <h1>{{ course }}</h1>
                 </div>
                 <a href="{% url 'course_detail' course.id %}"></a>
-                {% for quiz in course.quizzes.all %}
-                    <a href="{% url 'take_quiz' quiz.id %}">Пройти тест: {{ quiz.title }}</a>
-                {% empty %}
-                    <p>Тест для этого курса еще не создан.</p>
-                {% endfor %}
-
-                    </div>
-                {% endfor %}
+            </div>
+        {% endfor %}
     </div>
 </body>
 </html>

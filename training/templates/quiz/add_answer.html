@@ -1,15 +1,168 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Добавить варианты ответов</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Добавление ответов</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .question-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .question-text {
+            font-size: 1.2em;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3498db;
+        }
+
+        .answers-list {
+            margin-bottom: 30px;
+        }
+
+        .answer-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            margin-bottom: 10px;
+            background: white;
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .correct-answer {
+            color: #27ae60;
+            font-weight: 500;
+        }
+
+        .add-answer-form {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .btn:hover {
+            background-color: #2980b9;
+        }
+
+        .btn-delete {
+            background-color: #e74c3c;
+            padding: 6px 12px;
+            font-size: 0.9em;
+        }
+        .btn-back {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #95a5a6;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            transition: background-color 0.2s;
+        }
+
+        .btn-back:hover {
+            background-color: #7f8c8d;
+        }
+
+    </style>
 </head>
 <body>
-    <h2>Добавить варианты ответов к вопросу: {{ question.text }}</h2>
-    <form method="post">
-        {% csrf_token %}
-        {{ answer_form.as_p }}
-        <button type="submit">Добавить вариант ответа</button>
-    </form>
+    <div class="container">
+        <div class="question-card">
+            <h2 class="question-text">{{ question.text }}</h2>
+
+            <div class="answers-list">
+                <h3>Существующие ответы:</h3>
+                {% for answer in question.answers.all %}
+                    <div class="answer-item">
+                        <span {% if answer.is_correct %}class="correct-answer"{% endif %}>
+                            {{ answer.text }}
+                            {% if answer.is_correct %}
+                                (✓ Правильный ответ)
+                            {% endif %}
+                        </span>
+                        <form method="post" action="{% url 'delete_answer' answer.id %}" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-delete">Удалить</button>
+                        </form>
+                    </div>
+                {% empty %}
+                    <p>Пока нет ответов для этого вопроса.</p>
+                {% endfor %}
+            </div>
+
+            <div class="add-answer-form">
+                <h3>Добавить новый ответ:</h3>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        {{ answer_form.text }}
+                    </div>
+                    <div class="checkbox-group">
+                        {{ answer_form.is_correct }}
+                        <label for="{{ answer_form.is_correct.id_for_label }}">Правильный ответ</label>
+                    </div>
+                    <button type="submit" class="btn">Добавить ответ</button>
+                    <a href="{% url 'course_detail' question.quiz.course.id %}" class="btn-back">
+                        ← Вернуться к курсу
+                    </a>
+                </form>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

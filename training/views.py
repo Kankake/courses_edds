@@ -3,12 +3,108 @@ from .models import Course
 from django.shortcuts import get_object_or_404
 from .utils import role_required
 from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth import login
+from django.contrib.auth import authenticate,login
 from django.shortcuts import render, redirect
-from .models import Course, Lecture, Test, Profile, Quiz, Answer, Question, Answer
+from .models import Course, Profile, Quiz, Answer, Question, Answer, QuizResult
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from .forms import CourseForm, LectureForm, QuizForm, QuestionForm, AnswerForm
+from django.http import JsonResponse
+from django.contrib import messages
+
+def anonymous_required(function=None):
+    def wrapper(request, *args, **kwargs):
+        if request.user.is_authenticated:
+            return redirect('course_list')
+        return function(request, *args, **kwargs)
+    return wrapper
+
+@anonymous_required
+def login_view(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user = authenticate(request, username=username, password=password)
+        
+        if user is not None:
+            login(request, user)
+            return redirect('course_list')
+        else:
+            messages.error(request, 'Неверное имя пользователя или пароль')
+    
+    return render(request, 'training/login.html')
+
+@login_required
+def submit_quiz(request, quiz_id):
+    if request.method == 'POST':
+        quiz = get_object_or_404(Quiz, id=quiz_id)
+        correct_answers = 0
+        total_questions = quiz.questions.count()
+        
+        for question in quiz.questions.all():
+            user_answer = request.POST.get(f'question_{question.id}')
+            correct_answer = question.answers.filter(is_correct=True).first()
+            if correct_answer and user_answer == correct_answer.text:
+                correct_answers += 1
+        
+        score_percentage = (correct_answers / total_questions) * 100
+        
+        QuizResult.objects.update_or_create(
+            user=request.user,
+            quiz=quiz,
+            defaults={'score': score_percentage}
+        )
+        
+        return JsonResponse({'score': score_percentage})
+
+
+
+@login_required
+@role_required('admin')
+def add_quiz(request, course_id):
+    course = get_object_or_404(Course, id=course_id)
+
+    if request.method == 'POST':
+        form = QuizForm(request.POST)
+        if form.is_valid():
+            quiz = form.save(commit=False)
+            quiz.course = course
+            quiz.save()
+            return redirect('course_detail', course_id=course.id)
+    else:
+        form = QuizForm()
+
+    return render(request, 'quiz/add_quiz.html', {'form': form, 'course': course})
+
+@login_required
+@role_required('admin')
+def edit_quiz(request, quiz_id):
+    quiz = get_object_or_404(Quiz, id=quiz_id)
+
+    if request.method == 'POST':
+        form = QuizForm(request.POST, instance=quiz)
+        if form.is_valid():
+            form.save()
+            return redirect('course_detail', course_id=quiz.course.id)
+    else:
+        form = QuizForm(instance=quiz)
+
+    return render(request, 'quiz/edit_quiz.html', {'form': form, 'quiz': quiz})
+
+@login_required
+def delete_answer(request, answer_id):
+    answer = get_object_or_404(Answer, id=answer_id)
+    quiz_id = answer.question.quiz.id
+    answer.delete()
+    return redirect('edit_quiz', quiz_id=quiz_id)
+
+@login_required
+def delete_question(request, question_id):
+    question = get_object_or_404(Question, id=question_id)
+    quiz_id = question.quiz.id
+    question.delete()
+    return redirect('edit_quiz', quiz_id=quiz_id)
+
 
 @login_required
 @role_required('admin')
@@ -123,21 +219,24 @@ def dashboard(request):
             }
     return render(request, 'training/dashboard.html', context)
 
-
+@login_required
 @role_required('instructor')
 def instructor_dashboard(request):
     courses = Course.objects.all()
     return render(request, 'training/instructor_dashboard.html', {'courses': courses})
 
+@login_required
 def course_list(request):
     courses = Course.objects.all()
     return render(request, 'training/course_list.html', {'courses': courses})
 
+@login_required
 def course_detail(request, course_id):
     course = get_object_or_404(Course, id=course_id)
     lectures = course.lectures.all()
     return render(request, 'training/course_detail.html', {'course': course, 'lectures': lectures})
 
+@anonymous_required
 def register(request):
     if request.method == 'POST':
         form = UserCreationForm(request.POST)
@@ -150,6 +249,7 @@ def register(request):
     
     return render(request, 'registration/register.html', {'form': form})
 
+@login_required
 @role_required('admin')
 def users_progress(request):
     users = User.objects.all()
@@ -158,6 +258,7 @@ def users_progress(request):
     }
     return render(request, 'training/user_progress.html', context)
 
+@login_required
 def edit_course(request, course_id):
     course = get_object_or_404(Course, id=course_id)
     if request.method == 'POST':
@@ -169,6 +270,7 @@ def edit_course(request, course_id):
         form = CourseForm(instance=course)
     return render(request, 'training/edit_course.html', {'form': form})
 
+@login_required
 def create_lecture(request, course_id):
     course = get_object_or_404(Course, id=course_id)
     if request.method == 'POST':

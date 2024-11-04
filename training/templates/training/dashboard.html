@@ -95,6 +95,11 @@
 <body>
     <div class="container">
         <h1>Личный кабинет {{ user.username }}</h1>
+        <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit">Logout</button>
+        </form>        
+
         <h2>Роль: <span class="role-badge">{{ profile.role }}</span></h2>
 
         {% if profile.role == 'operator' %}

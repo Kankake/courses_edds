@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Quiz - {{ quiz.title }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .quiz-container {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .question-card {
+            background: white;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .answer-list {
+            margin-left: 20px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 8px 16px;
+            background-color: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .btn:hover {
+            background-color: #2980b9;
+        }
+
+        .btn-danger {
+            background-color: #e74c3c;
+        }
+
+        .btn-success {
+            background-color: #2ecc71;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-top: 5px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="quiz-container">
+        <h1>Редактирование теста: {{ quiz.title }}</h1>
+
+        <!-- Quiz Basic Info -->
+        <form method="post" class="section">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="title">Название теста:</label>
+                <input type="text" id="title" name="title" value="{{ quiz.title }}" class="form-control">
+            </div>
+            <button type="submit" class="btn">Сохранить изменения</button>
+        </form>
+
+        <!-- Questions Section -->
+        <div class="section">
+            <h2>Вопросы</h2>
+            {% for question in quiz.questions.all %}
+                <div class="question-card">
+                    <h3>{{ question.text }}</h3>
+                    <div class="answer-list">
+                        {% for answer in question.answers.all %}
+                            <div class="answer-option">
+                                <span>{{ answer.text }}</span>
+                                {% if answer.is_correct %}
+                                    <span style="color: green;">(Правильный ответ)</span>
+                                {% endif %}
+                                <form method="post" action="{% url 'delete_answer' answer.id %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger">Удалить</button>
+                                </form>
+                            </div>
+                        {% endfor %}
+                        
+                        <!-- Add Answer Form -->
+                        <form method="post" action="{% url 'add_answers' question.id %}" class="form-group">
+                            {% csrf_token %}
+                            {{ answer_form.text }}
+                            <div class="checkbox-group">
+                                {{ answer_form.is_correct }}
+                                <label for="{{ answer_form.is_correct.id_for_label }}">Правильный ответ</label>
+                            </div>
+                            <button type="submit" class="btn btn-success">Добавить ответ</button>
+                        </form>
+                    </div>
+                    <form method="post" action="{% url 'delete_question' question.id %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">Удалить вопрос</button>
+                    </form>
+                </div>
+            {% endfor %}
+
+            <!-- Add Question Form -->
+            <form method="post" action="{% url 'add_question' quiz.id %}" class="form-group">
+                {% csrf_token %}
+                {{ question_form.text }}
+                <button type="submit" class="btn btn-success">Добавить вопрос</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
