@@ -29,7 +29,6 @@ class QuizForm(forms.ModelForm):
         fields = ['title', 'course']
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Название теста'}),
-            'course': forms.Select(attrs={'class': 'form-control'}),
         }
 
 class QuestionForm(forms.ModelForm):

@@ -3,6 +3,16 @@ from django.contrib.auth.models import User
 from django.dispatch import receiver
 from django.db.models.signals import post_save
 
+class QuizResult(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    quiz = models.ForeignKey('Quiz', on_delete=models.CASCADE)
+    score = models.IntegerField()
+    completed_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ['user', 'quiz']
+
+
 class Quiz(models.Model):
     title = models.CharField(max_length=200)
     course = models.ForeignKey('Course', on_delete=models.CASCADE, related_name='quizzes', null=True)

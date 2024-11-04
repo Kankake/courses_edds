@@ -2,35 +2,28 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Создать тест</title>
+    <title>Добавить тест</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Roboto', sans-serif;
             max-width: 800px;
-            margin: 40px auto;
+            margin: 0 auto;
             padding: 20px;
             background-color: #f5f5f5;
         }
-
         h2 {
             color: #2c3e50;
             text-align: center;
             margin-bottom: 30px;
-            font-weight: 500;
         }
-
         form {
             background: white;
             padding: 30px;
             border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-
-        input[type="text"], 
-        input[type="number"],
-        textarea,
-        select {
+        input[type="text"], textarea {
             width: 100%;
             padding: 10px;
             margin: 8px 0;
@@ -38,50 +31,40 @@
             border-radius: 4px;
             box-sizing: border-box;
         }
-
         button {
             background-color: #3498db;
             color: white;
-            padding: 12px 24px;
+            padding: 12px 20px;
             border: none;
             border-radius: 4px;
             cursor: pointer;
             font-size: 16px;
             width: 100%;
             margin-top: 20px;
-            transition: background-color 0.3s;
         }
-
         button:hover {
             background-color: #2980b9;
         }
-
-        label {
-            color: #34495e;
-            font-weight: 500;
+        a {
             display: block;
-            margin-top: 15px;
+            text-align: center;
+            margin-top: 20px;
+            color: #3498db;
+            text-decoration: none;
         }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .error {
-            color: #e74c3c;
-            font-size: 14px;
-            margin-top: 5px;
+        a:hover {
+            color: #2980b9;
+            text-decoration: underline;
         }
     </style>
 </head>
 <body>
-    <h2>Создать новый тест</h2>
+    <h2>Добавить тест к курсу: {{ course.title }}</h2>
     <form method="post">
         {% csrf_token %}
-        <div class="form-group">
-            {{ quiz_form.as_p }}
-        </div>
-        <button type="submit">Сохранить тест</button>
+        {{ form.as_p }}
+        <button type="submit">Добавить тест</button>
     </form>
+    <a href="{% url 'course_detail' course.id %}">Назад к курсу</a>
 </body>
 </html>
