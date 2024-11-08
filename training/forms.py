@@ -26,7 +26,7 @@ class LectureForm(forms.ModelForm):
 class QuizForm(forms.ModelForm):
     class Meta:
         model = Quiz
-        fields = ['title', 'course']
+        fields = ['title']
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Название теста'}),
         }
@@ -35,6 +35,8 @@ class QuestionForm(forms.ModelForm):
     class Meta:
         model = Question
         fields = ['text']
+        question = forms.CharField()
+
         widgets = {
             'text': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Текст вопроса'}),
         }
