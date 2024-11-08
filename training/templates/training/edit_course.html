@@ -83,7 +83,11 @@
         {{ form.as_p }}
         <button type="submit">Сохранить изменения</button>
     </form>
+    {% if profile.role == 'admin' %}
     <a href="{% url 'admin_dashboard' %}">Назад к панели администратора</a>
+    {% else %}
+    <a href="{% url 'dashboard' %}">Назад к личному кабинету</a>
+    {% endif %}
 </div>
 </body>
 </html>

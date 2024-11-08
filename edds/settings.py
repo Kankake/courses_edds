@@ -125,3 +125,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGIN_REDIRECT_URL = 'dashboard'  # This matches your root dashboard view
 LOGOUT_REDIRECT_URL = 'login'
+
+
+LANGUAGE_CODE = 'ru'
+
+# Add this to override default error messages
+ERROR_MESSAGES = {
+    'required': 'Обязательное поле'
+}

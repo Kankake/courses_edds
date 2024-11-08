@@ -4,13 +4,14 @@ from django.dispatch import receiver
 from django.db.models.signals import post_save
 
 class QuizResult(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    quiz = models.ForeignKey('Quiz', on_delete=models.CASCADE)
-    score = models.IntegerField()
-    completed_at = models.DateTimeField(auto_now_add=True)
-    
-    class Meta:
-        unique_together = ['user', 'quiz']
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='quiz_results')
+    quiz = models.ForeignKey('Quiz', on_delete=models.CASCADE, related_name='results')
+    score = models.DecimalField(max_digits=5, decimal_places=2)  # Процентный результат
+    date_taken = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.quiz.title} - {self.score}%"
+
 
 
 class Quiz(models.Model):
@@ -77,10 +78,12 @@ class Test(models.Model):
 class Progress(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
-    progress_percent = models.FloatField(default=0.0)
+    completed = models.BooleanField(default=False)
+    progress_percentage = models.IntegerField(default=0)
+    last_accessed = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
-        return f"{self.user.username} - {self.course.title}: {self.progress_percent:.2f}%"
+    class Meta:
+        unique_together = ['user', 'course']
 
 @receiver(post_save, sender=User)
 def create_or_update_user_profile(sender, instance, created, **kwargs):

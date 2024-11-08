@@ -135,10 +135,6 @@
                                 (✓ Правильный ответ)
                             {% endif %}
                         </span>
-                        <form method="post" action="{% url 'delete_answer' answer.id %}" style="display: inline;">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-delete">Удалить</button>
-                        </form>
                     </div>
                 {% empty %}
                     <p>Пока нет ответов для этого вопроса.</p>

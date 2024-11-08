@@ -90,23 +90,82 @@
             background-color: #34495e;
         }
 
+        .logout-button {
+            background-color: #e74c3c;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Roboto', sans-serif;
+            font-size: 14px;
+            transition: background-color 0.2s ease;
+        }
+
+        .logout-button:hover {
+            background-color: #c0392b;
+        }
+        .logout-form {
+            position: absolute;
+            top: 30px;
+            right: 150px;
+        }
+        .top-right-controls {
+            position: absolute;
+            top: 30px;
+            right: 150px;
+            display: flex;
+            gap: 10px;
+        }
+        .top-right-controls {
+                position: absolute;
+                top: 40px;
+                right: 150px;
+                display: flex;
+                gap: 10px;
+                align-items: center;
+            }
+
+            .top-right-controls .admin-button,
+            .top-right-controls .logout-button {
+                height: 38px;
+                padding: 0 20px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin: 0;
+                font-size: 14px;
+            }
+
+
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Личный кабинет {{ user.username }}</h1>
-        <form method="post" action="{% url 'logout' %}">
-            {% csrf_token %}
-            <button type="submit">Logout</button>
-        </form>        
+        <div class="top-right-controls">
+            <a href="{% url 'user_settings' %}" class="admin-button">Настройки</a>
+            <form method="post" action="{% url 'logout' %}" style="margin: 0;">
+                {% csrf_token %}
+                <button type="submit" class="logout-button">Выход</button>
+            </form>
+        </div>
+                      
 
         <h2>Роль: <span class="role-badge">{{ profile.role }}</span></h2>
 
-        {% if profile.role == 'operator' %}
-            <h3>Ваши курсы</h3>
+        <div class="admin-link">
+            <a href="{% url 'course_list' %}" class="admin-button">
+                Все курсы
+            </a>
+        </div>
+            
+            
+            {% if profile.role == 'instructor' %}
+            <h3>Курсы, которые вы ведете</h3>
             <div class="admin-link">
-                <a href="{% url 'course_list' %}" class="admin-button">
-                    Все курсы
+                <a href="{% url 'create_course' %}" class="admin-button">
+                    Добавить курс
                 </a>
             </div>
             <ul>
@@ -114,25 +173,16 @@
                     <a href="{% url 'course_detail' course.id %}" class="course-link">
                         <li>
                             <span>{{ course.title }}</span>
-                            <span class="progress">Прогресс: {{ course.progress }}%</span>
+                            <div>
+                                <a href="{% url 'edit_course' course.id %}" class="admin-button">
+                                    Редактировать
+                                </a>
+                            </div>
                         </li>
                     </a>
                 {% endfor %}
             </ul>
-            
-            
-        {% elif profile.role == 'instructor' %}
-            <h3>Курсы, которые вы ведете</h3>
-            <ul>
-                {% for course in courses %}
-                <a href="{% url 'course_detail' course.id %}" class="course-link">
-                    <li>
-                        <span>{{ course.title }}</span>
-                        <span class="progress">Прогресс: {{ course.progress }}%</span>
-                    </li>
-                </a>
-                {% endfor %}
-            </ul>
+        
         {% elif profile.role == 'admin' %}
             <div class="admin-link">
                 <a href="{% url 'admin_dashboard' %}" class="admin-button">

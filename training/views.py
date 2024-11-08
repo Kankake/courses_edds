@@ -1,11 +1,10 @@
 
-from .models import Course
 from django.shortcuts import get_object_or_404
 from .utils import role_required
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import authenticate,login
 from django.shortcuts import render, redirect
-from .models import Course, Profile, Quiz, Answer, Question, Answer, QuizResult
+from .models import Course, Profile, Quiz, Question, Answer, QuizResult
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from .forms import CourseForm, LectureForm, QuizForm, QuestionForm, AnswerForm
@@ -18,6 +17,23 @@ def anonymous_required(function=None):
             return redirect('course_list')
         return function(request, *args, **kwargs)
     return wrapper
+
+@login_required
+def user_settings(request):
+    if request.method == 'POST':
+        user = request.user
+        user.username = request.POST.get('username')
+        user.email = request.POST.get('email')
+        
+        new_password = request.POST.get('new_password')
+        if new_password:
+            user.set_password(new_password)
+            
+        user.save()
+        messages.success(request, 'Настройки успешно сохранены')
+        return redirect('dashboard')
+        
+    return render(request, 'registration/user_settings.html')
 
 @anonymous_required
 def login_view(request):
@@ -32,35 +48,49 @@ def login_view(request):
         else:
             messages.error(request, 'Неверное имя пользователя или пароль')
     
-    return render(request, 'training/login.html')
-
+    return render(request, 'registration/login.html')
 @login_required
 def submit_quiz(request, quiz_id):
     if request.method == 'POST':
         quiz = get_object_or_404(Quiz, id=quiz_id)
-        correct_answers = 0
+        total_score = 0
         total_questions = quiz.questions.count()
-        
-        for question in quiz.questions.all():
-            user_answer = request.POST.get(f'question_{question.id}')
-            correct_answer = question.answers.filter(is_correct=True).first()
-            if correct_answer and user_answer == correct_answer.text:
-                correct_answers += 1
-        
-        score_percentage = (correct_answers / total_questions) * 100
-        
-        QuizResult.objects.update_or_create(
-            user=request.user,
-            quiz=quiz,
-            defaults={'score': score_percentage}
-        )
-        
-        return JsonResponse({'score': score_percentage})
 
+        for question in quiz.questions.all():
+            answer_text = request.POST.get(f'question_{question.id}')
+            if answer_text:
+                correct_answer = question.answers.filter(is_correct=True).first()
+                if correct_answer and answer_text == correct_answer.text:
+                    total_score += 1
+
+        if total_questions > 0:
+            percentage_score = (total_score / total_questions) * 100
+            QuizResult.objects.create(
+                user=request.user,
+                quiz=quiz,
+                score=percentage_score
+            )
+            return JsonResponse({
+                'status': 'success',
+                'score': f'{percentage_score:.1f}%'
+            })
+        
+        return JsonResponse({
+            'status': 'error',
+            'message': 'В тесте нет вопросов'
+        })
+
+
+def calculate_quiz_score(quiz, answers):
+    score = 0
+    for question in quiz.questions.all():
+        if question.id in answers and answers[question.id] == question.correct_answer:
+            score += 1
+    return score
 
 
 @login_required
-@role_required('admin')
+@role_required('instructor', 'admin')
 def add_quiz(request, course_id):
     course = get_object_or_404(Course, id=course_id)
 
@@ -77,7 +107,7 @@ def add_quiz(request, course_id):
     return render(request, 'quiz/add_quiz.html', {'form': form, 'course': course})
 
 @login_required
-@role_required('admin')
+@role_required('instructor', 'admin')
 def edit_quiz(request, quiz_id):
     quiz = get_object_or_404(Quiz, id=quiz_id)
 
@@ -107,7 +137,7 @@ def delete_question(request, question_id):
 
 
 @login_required
-@role_required('admin')
+@role_required('instructor', 'admin')
 def add_answers(request, question_id):
     question = get_object_or_404(Question, id=question_id)
 
@@ -118,7 +148,6 @@ def add_answers(request, question_id):
             answer.question = question
             answer.save()
 
-            # Перенаправляем обратно к добавлению ответов, чтобы можно было добавить несколько вариантов
             return redirect('add_answers', question_id=question.id)
     else:
         answer_form = AnswerForm()
@@ -126,7 +155,7 @@ def add_answers(request, question_id):
     return render(request, 'quiz/add_answer.html', {'question': question, 'answer_form': answer_form})
 
 @login_required
-@role_required('admin') 
+@role_required('instructor', 'admin')
 def add_question(request, quiz_id):
     quiz = get_object_or_404(Quiz, id=quiz_id)
 
@@ -144,14 +173,13 @@ def add_question(request, quiz_id):
     return render(request, 'quiz/add_question.html', {'quiz': quiz, 'question_form': question_form})
 
 @login_required
-@role_required('admin')  # Или укажи 'instructor' если инструкторам разрешено создавать тесты
+@role_required('instructor', 'admin')
 def create_quiz(request):
     if request.method == 'POST':
         quiz_form = QuizForm(request.POST)
         if quiz_form.is_valid():
             quiz = quiz_form.save()
 
-            # Редирект на страницу добавления вопросов к созданному тесту
             return redirect('add_question', quiz_id=quiz.id)
     else:
         quiz_form = QuizForm()
@@ -190,13 +218,13 @@ def admin_dashboard(request):
     return render(request, 'training/admin_dashboard.html', {"courses": courses, "users": users})
 
 @login_required
-@role_required('instructor')
+@role_required('instructor', 'admin')
 def instructor_dashboard(request):
     courses = Course.objects.filter(instructor=request.user)
     return render(request, 'training/instructor_dashboard.html', {"courses": courses})
 
 @login_required
-@role_required('admin')
+@role_required('instructor', 'admin')
 def create_course(request):
     if request.method == 'POST':
         form = CourseForm(request.POST)
@@ -211,19 +239,19 @@ def create_course(request):
 def dashboard(request):
     user = request.user
     profile = request.user.profile
-    courses = Course.objects.filter()
+    courses = Course.objects.all()
+    user_results = QuizResult.objects.filter(user=user)
+    progress_data = {result.quiz.id: result.score for result in user_results}
+
     context = {
-                'user': user,
-                'profile': profile,
-                'courses': courses
-            }
+        'user': user,
+        'profile': profile,
+        'courses': courses,
+        'progress_data': progress_data
+    }
+
     return render(request, 'training/dashboard.html', context)
 
-@login_required
-@role_required('instructor')
-def instructor_dashboard(request):
-    courses = Course.objects.all()
-    return render(request, 'training/instructor_dashboard.html', {'courses': courses})
 
 @login_required
 def course_list(request):
@@ -233,20 +261,29 @@ def course_list(request):
 @login_required
 def course_detail(request, course_id):
     course = get_object_or_404(Course, id=course_id)
-    lectures = course.lectures.all()
-    return render(request, 'training/course_detail.html', {'course': course, 'lectures': lectures})
+    context = {
+        'course': course,
+        'profile': request.user.profile,
+        'can_delete': request.user.profile.role in ['admin', 'instructor']
+    }
+    return render(request, 'training/course_detail.html', context)
+
+@role_required('admin', 'instructor')
+def delete_quiz(request, quiz_id):
+    quiz = get_object_or_404(Quiz, id=quiz_id)
+    course_id = quiz.course.id
+    quiz.delete()
+    return redirect('course_detail', course_id=course_id)
 
 @anonymous_required
 def register(request):
     if request.method == 'POST':
         form = UserCreationForm(request.POST)
         if form.is_valid():
-            user = form.save()
-            login(request, user)
-            return redirect('course_list')
+            form.save()
+            return redirect('login')
     else:
         form = UserCreationForm()
-    
     return render(request, 'registration/register.html', {'form': form})
 
 @login_required
