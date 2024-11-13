@@ -49,6 +49,7 @@ def login_view(request):
             messages.error(request, 'Неверное имя пользователя или пароль')
     
     return render(request, 'registration/login.html')
+
 @login_required
 def submit_quiz(request, quiz_id):
     if request.method == 'POST':
@@ -122,14 +123,14 @@ def edit_quiz(request, quiz_id):
     return render(request, 'quiz/edit_quiz.html', {'form': form, 'quiz': quiz})
 
 @login_required
-def delete_answer(request, answer_id):
+def delete_answer(answer_id):
     answer = get_object_or_404(Answer, id=answer_id)
     quiz_id = answer.question.quiz.id
     answer.delete()
     return redirect('edit_quiz', quiz_id=quiz_id)
 
 @login_required
-def delete_question(request, question_id):
+def delete_question(question_id):
     question = get_object_or_404(Question, id=question_id)
     quiz_id = question.quiz.id
     question.delete()
