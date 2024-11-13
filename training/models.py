@@ -3,6 +3,8 @@ from django.contrib.auth.models import User
 from django.dispatch import receiver
 from django.db.models.signals import post_save
 
+
+
 class QuizResult(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='quiz_results')
     quiz = models.ForeignKey('Quiz', on_delete=models.CASCADE, related_name='results')
@@ -40,7 +42,7 @@ class Profile(models.Model):
     USER_ROLES = (
         ('operator', 'Operator'),
         ('instructor', 'Instructor'),
-        ('Администратор', 'Admin'),
+        ('admin', 'Admin'),
     )
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     role = models.CharField(max_length=20, choices=USER_ROLES, default='operator')

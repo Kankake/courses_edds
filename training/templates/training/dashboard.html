@@ -118,38 +118,42 @@
             gap: 10px;
         }
         .top-right-controls {
-                position: absolute;
-                top: 40px;
-                right: 150px;
-                display: flex;
-                gap: 10px;
-                align-items: center;
-            }
+            position: absolute;
+            top: 0;
+            right: 0;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
 
-            .top-right-controls .admin-button,
-            .top-right-controls .logout-button {
-                height: 38px;
-                padding: 0 20px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                margin: 0;
-                font-size: 14px;
-            }
+        .top-right-controls .admin-button,
+        .top-right-controls .logout-button {
+            height: 38px;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            font-size: 14px;
+        }
+
 
 
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Личный кабинет {{ user.username }}</h1>
-        <div class="top-right-controls">
-            <a href="{% url 'user_settings' %}" class="admin-button">Настройки</a>
-            <form method="post" action="{% url 'logout' %}" style="margin: 0;">
-                {% csrf_token %}
-                <button type="submit" class="logout-button">Выход</button>
-            </form>
+        <div style="position: relative;">
+            <h1>Личный кабинет {{ user.username }}</h1>
+            <div class="top-right-controls">
+                <a href="{% url 'user_settings' %}" class="admin-button">Настройки</a>
+                <form method="post" action="{% url 'logout' %}" style="margin: 0;">
+                    {% csrf_token %}
+                    <button type="submit" class="logout-button">Выход</button>
+                </form>
+            </div>
         </div>
+    
                       
 
         <h2>Роль: <span class="role-badge">{{ profile.role }}</span></h2>
