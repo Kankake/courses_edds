@@ -2,6 +2,18 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.dispatch import receiver
 from django.db.models.signals import post_save
+from django.utils import timezone
+
+class LectureFile(models.Model):
+    lecture = models.ForeignKey('Lecture', related_name='files', on_delete=models.CASCADE)
+    name = models.CharField(max_length=255)
+    file = models.FileField(upload_to='lecture_files/')
+
+    def delete(self, *args, **kwargs):
+        # Delete the file from storage
+        self.file.delete()
+        # Delete the model instance
+        super().delete(*args, **kwargs)
 
 
 
@@ -55,7 +67,7 @@ class Course(models.Model):
     description = models.TextField()
     quiz = models.OneToOneField('Quiz', on_delete=models.SET_NULL, null=True, blank=True, related_name='related_course')
     created_at = models.DateTimeField(auto_now_add=True)
-    instructor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='courses')
+    instructor = models.ForeignKey(User, on_delete=models.CASCADE, related_name='courses')
 
     def __str__(self):
         return self.title

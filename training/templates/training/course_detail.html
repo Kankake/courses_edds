@@ -1,15 +1,18 @@
 {% load quiz_filters %}
+{% load static %}
+
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" dir="ltr">
 <head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{{ course.description|truncatewords:20 }}">
     <title>{{ course.title }} - Course Details</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Roboto', sans-serif;
-            line-height: 1.6;
             max-width: 1000px;
             margin: 0 auto;
             padding: 30px;
@@ -37,7 +40,7 @@
         }
 
         .quiz-section {
-            margin-top: 50px;
+            margin-top: 40px;
         }
 
         .quiz-card {
@@ -141,63 +144,461 @@
             margin-right: 10px;
             transform: scale(1.2);
         }
+        .lectures-section {
+            margin: 40px 0;
+        }
+
+        .lecture-card {
+            background: linear-gradient(145deg, #ffffff, #f8f9fa);
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.06);
+            overflow: hidden;
+        }
+
+        .lecture-header {
+            padding: 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(145deg, #f8f9fa, #f1f3f5);
+            transition: background 0.3s ease;
+        }
+
+        .lecture-header:hover {
+            background: linear-gradient(145deg, #f1f3f5, #e9ecef);
+        }
+
+        .lecture-title {
+            margin: 0;
+            color: #1a237e;
+            font-size: 1.3em;
+        }
+
+        .toggle-icon {
+            transition: transform 0.3s ease;
+        }
+
+        .lecture-content {
+            padding: 0 20px;
+            max-height: 0;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .lecture-content.active {
+            padding: 20px;
+            max-height: 1000px;
+        }
+
+        .add-lecture-btn {
+            background: linear-gradient(145deg, #3f51b5, #3949ab);
+            margin-top: 30px;
+            display: block;
+            width: fit-content;
+            margin: 30px auto;
+        }
+
+        .add-lecture-btn:hover {
+            background: linear-gradient(145deg, #3949ab, #303f9f);
+        }
+
+        .lecture-files {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(63, 81, 181, 0.05);
+            border-radius: 8px;
+        }
+
+        .file-item {
+            margin: 10px 0;
+        }
+
+        .file-download-btn {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            text-decoration: none;
+            color: #2c3e50;
+            transition: all 0.3s ease;
+        }
+
+        .file-download-btn:hover {
+            background: #f5f7fa;
+            transform: translateX(5px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .file-icon {
+            font-size: 1.5em;
+            margin-right: 10px;
+        }
+
+        .file-name {
+            flex-grow: 1;
+        }
+
+        .file-size {
+            color: #666;
+            font-size: 0.9em;
+        }
+        .file-upload-section {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(63, 81, 181, 0.05);
+            border-radius: 8px;
+        }
+
+        .file-upload-section {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(63, 81, 181, 0.05);
+            border-radius: 8px;
+        }
+
+        .file-upload-form {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .file-input {
+            padding: 8px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            flex-grow: 1;
+        }
+
+        .file-name-input {
+            padding: 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            min-width: 200px;
+        }
+
+        .upload-btn {
+            background: linear-gradient(145deg, #4caf50, #45a049);
+        }
+
+        .upload-btn:hover {
+            background: linear-gradient(145deg, #45a049, #3d8b40);
+        }
+
+        .file-delete-btn {
+            padding: 5px 10px;
+            margin-left: 10px;
+            font-size: 1.2em;
+            line-height: 1;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+            vertical-align: middle;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+        }
+
+        input:checked + .slider {
+            background-color: #3f51b5;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        .slider.round {
+            border-radius: 34px;
+        }
+
+        .slider.round:before {
+            border-radius: 50%;
+        }
+
+        .toggle-label {
+            margin-left: 70px;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .edit-controls {
+            display: none;
+        }
+
+        .admin-control {
+            display: none;
+            pointer-events: none; /* Disable interaction when hidden */
+            opacity: 0;
+            position: absolute;
+            transition: opacity 0.3s ease;
+        }
+        .edit-mode .admin-control {
+            display: inline-flex;
+            pointer-events: auto; /* Re-enable interaction in edit mode */
+            opacity: 1;
+            position: relative;
+        }
+        body {
+        margin-left: 80px;
+        }
+
+        .side-menu {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 80px;
+            height: 80vh;
+            background: linear-gradient(145deg, #1a237e, #3949ab);
+            color: white;
+            padding: 20px 0;
+            box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            border-bottom-right-radius: 25px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .menu-header {
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+            letter-spacing: 2px;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        .side-menu nav {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+        }
+
+        .menu-item {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 50px;
+            height: 50px;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border-radius: 50%;
+        }
+
+        .menu-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: scale(1.1);
+        }
+
+        .menu-item i {
+            font-size: 1.5em;
+        }
+
+        .main-content {
+            width: 100%;
+            max-width: 1400px;
+            margin-left: 120px;
+            padding: 30px;
+        }
+
+        .btn-compact {
+            padding: 8px 16px;
+            font-size: 0.9em;
+            width: fit-content;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            max-width: 200px;
+        }
+        
     </style>
 </head>
 <body>
     {% csrf_token %}
-    <div style="position: fixed; top: 20px; right: 20px;">
-        <a href="{% url 'dashboard' %}" class="btn" style="background: linear-gradient(145deg, #2196f3, #1976d2);">
-            Профиль
-        </a>
+
+    <div class="side-menu">
+        <div class="menu-header">
+            <div class="logo">EDDS</div>
+        </div>
+        <nav>
+            <a href="{% url 'dashboard' %}" class="menu-item" title="Личный кабинет" aria-label="Перейти в личный кабинет">
+                <i class="fas fa-user"></i>
+            </a>
+            <a href="{% url 'course_list' %}" class="menu-item" title="Все курсы" aria-label="Перейти ко всем курсам">
+                <i class="fas fa-graduation-cap"></i>
+            </a>
+        </nav>
     </div>
     
-    <div class="course-container">
-        <h1 class="course-title">{{ course.title }}</h1>
-        <p>{{ course.description }}</p>
-    </div>
+          <div class="main-content">
+              <div class="course-container">
+                  {% if profile.role == 'admin' or course.instructor == user %}
+                  <div class="edit-toggle-container" style="text-align: right; margin-bottom: 20px; margin-right: 50px;">
+                      <label class="switch">
+                          <input type="checkbox" id="editModeToggle" aria-label="Включить режим редактирования">
+                          <span class="slider round"></span>
+                          <span class="toggle-label">Режим редактирования</span>
+                      </label>
+                  </div>
+                  {% endif %}
 
-    <div class="quiz-section">
-        <h2 style="text-align:center;">Тесты курса</h2>
-        {% for quiz in course.quizzes.all %}
-            <div class="quiz-card" id="quiz-{{ quiz.id }}">
-                <h3 class="quiz-title">{{ quiz.title }}</h3>
+                  <h1 class="course-title">{{ course.title }}</h1>
+                  <p>{{ course.description }}</p>
+        
+                  {% if profile.role == 'admin' or course.instructor == user %}
+                      <a href="{% url 'edit_course' course.id %}" class="btn btn-compact admin-control">
+                          <i class="fas fa-edit"></i> Изменить курс
+                      </a>
+                  {% endif %}
+              </div>
+
+              <div class="lectures-section">
+                  <h2 style="text-align:center;">Лекции курса</h2>
+                  {% for lecture in course.lectures.all %}
+                      <div class="lecture-card">
+                          <div class="lecture-header" onclick="toggleLecture({{ lecture.id }})" role="button" aria-expanded="false">
+                              <h3 class="lecture-title">{{ lecture.title }}</h3>
+                              <span class="toggle-icon">▼</span>
+                          </div>
+                          <div class="lecture-content" id="lecture-{{ lecture.id }}">
+                              {{ lecture.content|safe }}
+                              <div class="lecture-controls">
+                                  {% if profile.role == 'instructor' or profile.role == 'admin' %}
+                                  <a href="{% url 'edit_lecture' course.id lecture.id %}" class="btn btn-compact admin-control">
+                                    <i class="fas fa-edit"></i> Редактировать лекцию
+                                </a>
+
+                                  {% endif %}
+                                  {% if profile.role == 'instructor' or profile.role == 'admin' %}
+                                      <a href="{% url 'upload_file' lecture.id %}" class="btn btn-compact admin-control" aria-label="Загрузить файл к лекции">Загрузить файл</a>
+                                  {% endif %}
+                              </div>
+
+                              {% if lecture.files.all %}
+                                      {% for file in lecture.files.all %}
+                                      <div class="file-item" data-file-id="{{ file.id }}">
+                                          <a href="{{ file.file.url }}" class="file-download-btn" target="_blank" aria-label="Скачать {{ file.name }}">
+                                              <span class="file-icon">📄</span>
+                                              <span class="file-name">{{ file.name }}</span>
+                                          </a>
+                                          {% if profile.role == 'instructor' or profile.role == 'admin' %}
+                                              <button onclick="deleteFile({{ file.id }})" class="btn delete-btn file-delete-btn admin-control" aria-label="Удалить файл">×</button>
+                                          {% endif %}
+                                      </div>
+                                      {% endfor %}
+                                  </div>
+                              {% endif %}
+                          </div>
+                      </div>
+                  {% endfor %}
+        
+                  {% if profile.role == 'admin' or course.instructor == user %}
+                      <a href="{% url 'create_lecture' course.id %}" class="btn add-lecture-btn admin-control" aria-label="Добавить новую лекцию">Добавить лекцию</a>
+                  {% endif %}
+
+              <div class="quiz-section">
+                  <h2 style="text-align:center;">Тесты курса</h2>
+                  {% if profile.role == 'admin' or course.instructor == user %}
+                      <a href="{% url 'add_quiz' course.id %}" class="btn add-quiz-btn admin-control" aria-label="Добавить новый тест">Добавить тест</a>
+                  {% endif %}
+                  {% for quiz in course.quizzes.all %}
+                      <div class="quiz-card" id="quiz-{{ quiz.id }}">
+                          <h3 class="quiz-title">{{ quiz.title }}</h3>
                 
-                {% if profile.role == 'instructor' or profile.role == 'admin' %}
-                    <a href="{% url 'edit_quiz' quiz.id %}" class="btn">Редактировать</a>
-                    <button onclick="deleteQuiz({{ quiz.id }})" class="btn delete-btn">Удалить</button>
-                {% endif %}
-
-                {% if quiz|has_quiz_result:user %}
-                    <div class="quiz-result">
-                        Тест пройден: {{ quiz|get_quiz_score:user }}
-                    </div>
-                {% else %}
-                    <form class="quiz-form" data-quiz-id="{{ quiz.id }}" action="{% url 'submit_quiz' quiz.id %}" method="post" style="width:100%">
-                        {% csrf_token %}
-                        {% for question in quiz.questions.all %}
-                            <div class="question">
-                                <p>{{ question.text }}</p>
-                                <div class="answer-options">
-                                    {% for answer in question.answers.all %}
-                                        <label class="answer-option">
-                                            <input type="radio" name="question_{{ question.id }}" value="{{ answer.text }}">
-                                            {{ answer.text }}
-                                        </label>
-                                    {% endfor %}
-                                </div>
-                            </div>
-                        {% endfor %}
-                        <button type="submit" class="btn">Отправить ответы</button>
-                    </form>
-                {% endif %}
-            </div>
-        {% endfor %}
-
-        {% if profile.role == 'instructor' or profile.role == 'admin' %}
-            <a href="{% url 'add_quiz' course.id %}" class="btn add-quiz-btn">Добавить тест</a>
-        {% endif %}
-    </div>
-
+                          {% if profile.role == 'instructor' and course.instructor == user or profile.role == 'admin' %}
+                              <a href="{% url 'edit_quiz' quiz.id %}" class="btn btn-compact admin-control" aria-label="Редактировать тест">
+                                  <i class="fas fa-edit"></i> Редактировать
+                              </a>
+                              <button onclick="deleteQuiz({{ quiz.id }})" class="btn btn-compact delete-btn admin-control" aria-label="Удалить тест">
+                                  <i class="fas fa-trash"></i> Удалить
+                              </button>
+                          {% endif %}
+                          {% if quiz|has_quiz_result:user %}
+                              <div class="quiz-result">
+                                  Тест пройден: {{ quiz|get_quiz_score:user }}
+                              </div>
+                          {% else %}
+                              <form class="quiz-form" data-quiz-id="{{ quiz.id }}" action="{% url 'submit_quiz' quiz.id %}" method="post" style="width:100%">
+                                  {% csrf_token %}
+                                  {% for question in quiz.questions.all %}
+                                      <div class="question">
+                                          <p>{{ question.text }}</p>
+                                          <div class="answer-options">
+                                              {% for answer in question.answers.all %}
+                                                  <label class="answer-option">
+                                                      <input type="radio" name="question_{{ question.id }}" value="{{ answer.text }}" required>
+                                                      {{ answer.text }}
+                                                  </label>
+                                              {% endfor %}
+                                          </div>
+                                      </div>
+                                  {% endfor %}
+                                  <button type="submit" class="btn" aria-label="Отправить ответы на тест">Отправить ответы</button>
+                              </form>
+                          {% endif %}
+                      </div>
+                  {% endfor %}
+              </div>
+          </div>
+    <script>
+        function toggleLecture(lectureId) {
+            const content = document.getElementById(`lecture-${lectureId}`);
+            const icon = content.previousElementSibling.querySelector('.toggle-icon');
+            
+            content.classList.toggle('active');
+            if (content.classList.contains('active')) {
+                icon.style.transform = 'rotate(180deg)';
+            } else {
+                icon.style.transform = 'rotate(0deg)';
+            }
+        }
+        </script>
+        
     <script>
         // AJAX-обработка формы отправки теста
         document.querySelectorAll('.quiz-form').forEach(form => {
@@ -251,5 +652,73 @@
             }
         }
     </script>
+    <script>
+        document.querySelectorAll('.file-upload-form').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const lectureId = this.getAttribute('data-lecture-id');
+                const formData = new FormData(this);
+        
+                fetch(`/upload_lecture_file/${lectureId}/`, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        location.reload();
+                    } else {
+                        alert('Ошибка при загрузке файла');
+                    }
+                });
+            });
+        });
+        
+        function deleteFile(fileId) {
+            if (confirm('Вы уверены, что хотите удалить этот файл?')) {
+                fetch(`/delete_lecture_file/${fileId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const fileElement = document.querySelector(`[data-file-id="${fileId}"]`);
+                        if (fileElement) {
+                            fileElement.remove();
+                        }
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        }
+
+
+        </script>
+        <script>
+            const editModeToggle = document.getElementById('editModeToggle');
+            const courseContainer = document.querySelector('body');
+            
+            editModeToggle.addEventListener('change', function() {
+                if (this.checked) {
+                    courseContainer.classList.add('edit-mode');
+                    document.querySelectorAll('.admin-control').forEach(control => {
+                        control.style.display = 'block';
+                        setTimeout(() => control.style.opacity = '1', 10);
+                    });
+                } else {
+                    courseContainer.classList.remove('edit-mode');
+                    document.querySelectorAll('.admin-control').forEach(control => {
+                        control.style.opacity = '0';
+                        setTimeout(() => control.style.display = 'none', 300);
+                    });
+                }
+            });
+        </script>
 </body>
 </html>

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}EDDS{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        body {
+        margin-left: 80px;
+        }
+
+        .side-menu {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 80px;
+            height: 80vh;
+            background: linear-gradient(145deg, #1a237e, #3949ab);
+            color: white;
+            padding: 20px 0;
+            box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            border-bottom-right-radius: 25px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .menu-header {
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+            letter-spacing: 2px;
+        }
+
+        .side-menu nav {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+        }
+
+        .menu-item {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 50px;
+            height: 50px;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border-radius: 50%;
+        }
+
+        .menu-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: scale(1.1);
+        }
+
+        .menu-item i {
+            font-size: 1.5em;
+        }
+        .main-content {
+            width: 100%;
+            max-width: 1400px;
+            margin-left: 120px;
+            padding: 30px;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+            letter-spacing: 2px;
+        }
+    </style>
+    {% block styles %}{% endblock %}
+</head>
+<body>
+    <div class="side-menu">
+        <div class="menu-header">
+            <div class="logo">EDDS</div>
+        </div>
+        <nav>
+            <a href="{% url 'dashboard' %}" class="menu-item" title="Личный кабинет" aria-label="Перейти в личный кабинет">
+                <i class="fas fa-user"></i>
+            </a>
+            <a href="{% url 'course_list' %}" class="menu-item" title="Все курсы" aria-label="Перейти ко всем курсам">
+                <i class="fas fa-graduation-cap"></i>
+            </a>
+        </nav>
+    </div>
+    <div class="main-content">
+        {% block content %}{% endblock %}
+    </div>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

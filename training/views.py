@@ -4,10 +4,10 @@ from .utils import role_required
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import authenticate,login
 from django.shortcuts import render, redirect
-from .models import Course, Profile, Quiz, Question, Answer, QuizResult
-from django.contrib.auth.decorators import login_required
+from .models import Course, Profile, Quiz, Question, Answer, QuizResult, LectureFile, Lecture
+from django.contrib.auth.decorators import login_required, instructor_course_required
 from django.contrib.auth.models import User
-from .forms import CourseForm, LectureForm, QuizForm, QuestionForm, AnswerForm
+from .forms import CourseForm, LectureForm, QuizForm, QuestionForm, AnswerForm, LectureFileForm
 from django.http import JsonResponse
 from django.contrib import messages
 
@@ -17,6 +17,47 @@ def anonymous_required(function=None):
             return redirect('course_list')
         return function(request, *args, **kwargs)
     return wrapper
+
+@login_required
+@role_required('instructor', 'admin')
+def edit_course(request, course_id):
+    course = get_object_or_404(Course, id=course_id)
+    if request.method == 'POST':
+        form = CourseForm(request.POST, instance=course)
+        if form.is_valid():
+            form.save()
+            return redirect('course_detail', course_id=course.id)
+    else:
+        form = CourseForm(instance=course)
+    return render(request, 'training/edit_course.html', {'form': form, 'course': course})
+
+
+@login_required
+@role_required('instructor', 'admin')
+def upload_file(request, lecture_id):
+    lecture = get_object_or_404(Lecture, id=lecture_id)
+    if request.method == 'POST':
+        form = LectureFileForm(request.POST, request.FILES)
+        if form.is_valid():
+            lecture_file = form.save(commit=False)
+            lecture_file.lecture = lecture
+            lecture_file.save()
+            return redirect('course_detail', course_id=lecture.course.id)
+    else:
+        form = LectureFileForm()
+    
+    return render(request, 'training/upload_file.html', {'form': form, 'lecture': lecture})
+
+
+@login_required
+@role_required('instructor', 'admin')
+def delete_lecture_file(request, file_id):
+    if request.method == 'POST':
+        file = get_object_or_404(LectureFile, id=file_id)
+        file.delete()
+        return JsonResponse({'status': 'success'})
+    return JsonResponse({'status': 'error'})
+
 
 @login_required
 def user_settings(request):
@@ -230,11 +271,14 @@ def create_course(request):
     if request.method == 'POST':
         form = CourseForm(request.POST)
         if form.is_valid():
-            form.save()
-            return redirect('admin_dashboard')
+            course = form.save(commit=False)
+            course.instructor = request.user
+            course.save()
+            return redirect('course_detail', course.id)
     else:
         form = CourseForm()
     return render(request, 'training/create_course.html', {'form': form})
+
 
 @login_required
 def dashboard(request):
@@ -248,7 +292,8 @@ def dashboard(request):
         'user': user,
         'profile': profile,
         'courses': courses,
-        'progress_data': progress_data
+        'progress_data': progress_data,
+        'instructor_courses': Course.objects.filter(instructor=request.user)
     }
 
     return render(request, 'training/dashboard.html', context)
@@ -262,10 +307,10 @@ def course_list(request):
 @login_required
 def course_detail(request, course_id):
     course = get_object_or_404(Course, id=course_id)
+    profile = request.user.profile 
     context = {
         'course': course,
-        'profile': request.user.profile,
-        'can_delete': request.user.profile.role in ['admin', 'instructor']
+        'profile': profile,
     }
     return render(request, 'training/course_detail.html', context)
 
@@ -297,18 +342,26 @@ def users_progress(request):
     return render(request, 'training/user_progress.html', context)
 
 @login_required
-def edit_course(request, course_id):
-    course = get_object_or_404(Course, id=course_id)
+@instructor_course_required
+def edit_lecture(request,course_id, lecture_id):
+    lecture = get_object_or_404(Lecture, id=lecture_id)
+    course_id = lecture.course.id
     if request.method == 'POST':
-        form = CourseForm(request.POST, instance=course)
+        form = LectureForm(request.POST, instance=lecture)
         if form.is_valid():
-            form.save()
-            return redirect('admin_dashboard')  # Возвращаемся на панель администратора после сохранения
+            lecture = form.save()
+            return redirect('course_detail', course_id=lecture.course.id)
     else:
-        form = CourseForm(instance=course)
-    return render(request, 'training/edit_course.html', {'form': form})
+        form = LectureForm(instance=lecture)
+    return render(request, 'training/edit_lecture.html', {
+        'form': form,
+        'lecture': lecture,
+        'course_id': lecture.course.id
+    })
+
 
 @login_required
+@instructor_course_required
 def create_lecture(request, course_id):
     course = get_object_or_404(Course, id=course_id)
     if request.method == 'POST':
