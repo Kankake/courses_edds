@@ -1,16 +1,18 @@
 from django import forms
-from .models import Course, Lecture, Quiz, Question, Answer
+from .models import Course, Lecture, Quiz, Question, Answer, LectureFile
 
-
+class LectureFileForm(forms.ModelForm):
+    class Meta:
+        model = LectureFile
+        fields = ['name', 'file']
 
 class CourseForm(forms.ModelForm):
     class Meta:
         model = Course
-        fields = ['title', 'description', 'instructor']  # Указываем поля, которые будут в форме
+        fields = ['title', 'description']  # Указываем поля, которые будут в форме
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Введите название курса'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Описание курса'}),
-            'instructor': forms.Select(attrs={'class': 'form-control'}),
         }
 
 class LectureForm(forms.ModelForm):

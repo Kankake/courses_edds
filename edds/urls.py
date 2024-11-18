@@ -2,6 +2,8 @@ from django.contrib import admin
 from django.urls import path
 from training import views
 from django.contrib.auth.views import LoginView, LogoutView
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -13,7 +15,6 @@ urlpatterns = [
     path('courses/', views.course_list, name='course_list'),
     path('courses/<int:course_id>/', views.course_detail, name='course_detail'),
     path('course/<int:course_id>/edit/', views.edit_course, name='edit_course'),
-    path('course/<int:course_id>/create_lecture/', views.create_lecture, name='create_lecture'),
     path('create_course/', views.create_course, name='create_course'),
     # Дэшборды
     path('', views.dashboard, name='dashboard'),
@@ -31,4 +32,18 @@ urlpatterns = [
     path('question/<int:question_id>/delete/', views.delete_question, name='delete_question'),
     path('quiz/<int:quiz_id>/submit/', views.submit_quiz, name='submit_quiz'),
     path('delete_quiz/<int:quiz_id>/', views.delete_quiz, name='delete_quiz'),
-]
+    # Лекции
+    path('course/<int:course_id>/create_lecture/', views.create_lecture, name='create_lecture'),
+    path('lecture/<int:lecture_id>/upload/', views.upload_file, name='upload_file'),
+    path('delete_lecture_file/<int:file_id>/', views.delete_lecture_file, name='delete_lecture_file'),
+    path('course/<int:course_id>/lecture/<int:lecture_id>/edit/', views.edit_lecture, name='edit_lecture'),
+
+
+
+
+
+
+
+
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+

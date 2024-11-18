@@ -86,7 +86,7 @@
         {{ form.as_p }}
         <button type="submit">Добавить лекцию</button>
     </form>
-    <a href="{% url 'instructor_dashboard' %}">← Назад к панели инструктора</a>
+    <a href="{% url 'course_detail' course.id %}">← Назад к курсу</a>
 </div>
 
 </body>
