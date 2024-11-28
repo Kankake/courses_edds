@@ -37,6 +37,8 @@ urlpatterns = [
     path('delete_lecture_file/<int:file_id>/', views.delete_lecture_file, name='delete_lecture_file'),
     path('course/<int:course_id>/lecture/<int:lecture_id>/edit/', views.edit_lecture, name='edit_lecture'),
     path('upload_lecture_file/<int:lecture_id>/', views.upload_lecture_file, name='upload_lecture_file'),
+    # Выгрузка
+    path('export-course-stats/<int:course_id>/<str:format>/', views.export_course_stats, name='export_course_stats'),
 
 
 

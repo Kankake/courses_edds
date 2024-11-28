@@ -164,6 +164,78 @@
         font-size: 14px;
     }
 
+    .quiz-attempts-section {
+        margin-top: 20px;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 10px;
+    }
+
+    .quiz-result-box {
+        background: white;
+        padding: 15px;
+        margin: 10px 0;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .attempts-list {
+        margin-top: 10px;
+    }
+
+    .attempt-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px;
+        border-bottom: 1px solid #eee;
+    }
+
+    .student-name {
+        font-weight: 500;
+        color: #2c3e50;
+    }
+
+    .score {
+        color: #27ae60;
+        font-weight: bold;
+    }
+
+    .attempt-date {
+        color: #7f8c8d;
+        font-size: 0.9em;
+    }
+    .dropdown {
+        position: relative;
+        display: inline-block;
+    }
+
+    .dropdown-content {
+        display: none;
+        position: absolute;
+        right: 0;
+        background-color: #f9f9f9;
+        min-width: 160px;
+        box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+        z-index: 1;
+        border-radius: 8px;
+    }
+
+    .dropdown-content a {
+        color: black;
+        padding: 12px 16px;
+        text-decoration: none;
+        display: block;
+        transition: background-color 0.3s;
+    }
+
+    .dropdown-content a:hover {
+        background-color: #f1f1f1;
+        border-radius: 8px;
+    }
+    .dropdown-content.show {
+        display: block;
+    }
+
     @media (max-width: 768px) {
         .dashboard-header {
             text-align: center;
@@ -242,33 +314,67 @@
                 {% endfor %}
             </ul>
         </div>
-        <div class="courses-section" id="courseStats" style="display: none;">
+        <div class="courses-section" id="courseStats" style="display: none">
             <h3>Статистика курсов</h3>
             {% for course in instructor_courses %}
-                <div class="course-stats">
-                    <h4>{{ course.title }}</h4>
-                    <div class="stats-grid">
-                        <div class="stat-box">
-                            <span class="stat-number">{{ course.coursevisit_set.count }}</span>
-                            <span class="stat-label">Посещений</span>
-                        </div>
-                        <div class="stat-box">
-                            <span class="stat-number">{{ course.quiz_set.all|quiz_completion_count }}</span>
-                            <span class="stat-label">Тестов пройдено</span>
-                        </div>
-                    </div>
-                    <div class="visitor-entry">
-                        {% for visit in unique_visits %}
-                            {% if visit.course__title == course.title %}
-                                <p>Уникальные пользователи: {{ visit.user__username }}</p>
-                            {% endif %}
-                        {% endfor %}
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="color: #2c3e50; margin-bottom: 20px;">{{ course.title }}</h3>
+                
+                <div class="dropdown">
+                    <button class="admin-button" onclick="toggleDropdown({{ course.id }})">
+                        Экспорт статистики ▼
+                    </button>
+                    <div id="dropdown-{{ course.id }}" class="dropdown-content">
+                        <a href="{% url 'export_course_stats' course.id 'xml' %}">XML</a>
+                        <a href="{% url 'export_course_stats' course.id 'json' %}">JSON</a>
+                        <a href="{% url 'export_course_stats' course.id 'csv' %}">CSV</a>
+                        <a href="{% url 'export_course_stats' course.id 'excel' %}">Excel</a>
                     </div>
                 </div>
+            </div>
+                    
+            
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <span class="stat-number">{{ course.coursevisit_set.count }}</span>
+                    <span class="stat-label">Посещений</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-number">{{ course.quizzes.all|length }}</span>
+                    <span class="stat-label">Всего тестов</span>
+                </div>
+            </div>
+
+            {% for quiz in course.quizzes.all %}
+            <div class="quiz-block" style="background: white; padding: 15px; margin-top: 15px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <h4>{{ quiz.title }}</h4>
+                <div class="attempts-table">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: #f1f1f1;">
+                                <th style="padding: 12px; text-align: left;">Студент</th>
+                                <th style="padding: 12px; text-align: center;">Результат</th>
+                                <th style="padding: 12px; text-align: right;">Дата</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for attempt in quiz.attempts.all %}
+                            <tr style="border-bottom: 1px solid #eee;">
+                                <td style="padding: 12px;">{{ attempt.user.username }}</td>
+                                <td style="padding: 12px; text-align: center;">{{ attempt.score }}%</td>
+                                <td style="padding: 12px; text-align: right;">{{ attempt.created_at|date:"d.m.Y H:i" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
             {% endfor %}
-        </div>
         
-    
+    {% endfor %}
+</div>
+</div>
+
     {% elif profile.role == 'admin' %}
         <div class="admin-link">
             <a href="{% url 'admin_dashboard' %}" class="admin-button">Админ-панель</a>
@@ -284,6 +390,22 @@
             statsDiv.style.display = 'block';
         } else {
             statsDiv.style.display = 'none';
+        }
+    }
+
+    function toggleDropdown(courseId) {
+        document.getElementById("dropdown-" + courseId).classList.toggle("show");
+    }
+
+    window.onclick = function(event) {
+        if (!event.target.matches('.admin-button')) {
+            var dropdowns = document.getElementsByClassName("dropdown-content");
+            for (var i = 0; i < dropdowns.length; i++) {
+                var openDropdown = dropdowns[i];
+                if (openDropdown.classList.contains('show')) {
+                    openDropdown.classList.remove('show');
+                }
+            }
         }
     }
 </script>
