@@ -15,6 +15,27 @@ class LectureFile(models.Model):
         # Delete the model instance
         super().delete(*args, **kwargs)
 
+class CourseVisit(models.Model):
+    course = models.ForeignKey('Course', on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    visit_date = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-visit_date']
+
+class LectureVisit(models.Model):
+    lecture = models.ForeignKey('Lecture', on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    visit_date = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-visit_date']
+
+class QuizCompletion(models.Model):
+    quiz = models.ForeignKey('Quiz', on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    completion_date = models.DateTimeField(auto_now_add=True)
+    score = models.IntegerField()
 
 
 class QuizResult(models.Model):

@@ -1,724 +1,500 @@
+{% extends 'base.html' %}
 {% load quiz_filters %}
 {% load static %}
 
-<!DOCTYPE html>
-<html lang="ru" dir="ltr">
-<head>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="{{ course.description|truncatewords:20 }}">
-    <title>{{ course.title }} - Course Details</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Roboto', sans-serif;
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 30px;
-            background-color: #f5f7fa;
-            color: #2c3e50;
-        }
+{% block title %}
+{{ course.title }} - Course Details
+{% endblock %}
 
-        .course-container {
-            background: linear-gradient(145deg, #ffffff, #f8f9fa);
-            border-radius: 15px;
-            padding: 40px;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
-            margin-bottom: 40px;
-            text-align: left;
-        }
+{% block content %}
+<style>
+    /* Стили уникальные для этой страницы */
+    .course-container {
+        background: linear-gradient(145deg, #ffffff, #f8f9fa);
+        border-radius: 15px;
+        padding: 40px;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+        margin-bottom: 40px;
+        text-align: left;
+    }
 
-        .course-title {
-            color: #1a237e;
-            font-size: 2.5em;
-            margin-bottom: 20px;
-            border-bottom: 3px solid #3f51b5;
-            padding-bottom: 15px;
-            font-weight: 500;
-            text-align: center;
-        }
+    .course-title {
+        color: #1a237e;
+        font-size: 2.5em;
+        margin-bottom: 20px;
+        border-bottom: 3px solid #3f51b5;
+        padding-bottom: 15px;
+        font-weight: 500;
+        text-align: center;
+    }
 
-        .quiz-section {
-            margin-top: 40px;
-        }
+    .lecture-card {
+        background: linear-gradient(145deg, #ffffff, #f8f9fa);
+        border-radius: 15px;
+        margin-bottom: 20px;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.06);
+        overflow: hidden;
+    }
 
-        .quiz-card {
-            background: linear-gradient(145deg, #ffffff, #f8f9fa);
-            border-radius: 15px;
-            padding: 30px;
-            margin-bottom: 25px;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.06);
-            transition: all 0.3s ease;
-            border: 1px solid rgba(0, 0, 0, 0.05);
-        }
+    .lecture-header {
+        padding: 20px;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: linear-gradient(145deg, #f8f9fa, #f1f3f5);
+        transition: background 0.3s ease;
+    }
 
-        .quiz-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
-        }
+    .lecture-header:hover {
+        background: linear-gradient(145deg, #f1f3f5, #e9ecef);
+    }
 
-        .quiz-title {
-            font-size: 1.6em;
-            color: #1a237e;
-            margin-bottom: 15px;
-            font-weight: 500;
-        }
+    .lecture-content {
+        max-height: 0; /* Начальное состояние — закрыто */
+        overflow: hidden;
+        padding: 0 20px; /* Скрываем начальный padding */
+        transition: max-height 0.3s ease, padding 0.3s ease;
+    }
 
-        .btn {
-            padding: 12px 24px;
-            font-size: 1em;
-            background: linear-gradient(145deg, #3f51b5, #3949ab);
-            color: white;
-            text-decoration: none;
-            border-radius: 8px;
-            border: none;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 500;
-            margin: 5px;
-        }
+    .lecture-content.active {
+        max-height: 1000px; /* Достаточно большое значение для открытия */
+        padding: 20px; /* Восстанавливаем padding при открытии */
+    }
 
-        .btn:hover {
-            background: linear-gradient(145deg, #3949ab, #303f9f);
-            transform: translateY(-2px);
-        }
+    .toggle-icon {
+        transition: transform 0.3s ease;
+    }
 
-        .delete-btn {
-            background: linear-gradient(145deg, #f44336, #e53935);
-        }
+    .toggle-icon.open {
+        transform: rotate(180deg); /* Поворот стрелки вниз */
+    }
 
-        .delete-btn:hover {
-            background: linear-gradient(145deg, #e53935, #d32f2f);
-        }
+    .file-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+    }
 
-        .quiz-result {
-            background: linear-gradient(145deg, #a5d6a7, #81c784);
-            padding: 15px;
-            border-radius: 8px;
-            margin: 20px 0;
-            color: #1b5e20;
-            font-weight: 500;
-            text-align: center;
-        }
+    .file-download-btn {
+        display: flex;
+        align-items: center;
+        padding: 10px;
+        background: white;
+        border: 1px solid #e0e0e0;
+        border-radius: 6px;
+        text-decoration: none;
+        color: #2c3e50;
+        transition: all 0.3s ease;
+        flex-grow: 1;
+    }
 
-        .question {
-            background: #ffffff;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            border: 1px solid rgba(0, 0, 0, 0.08);
-        }
+    .file-download-btn:hover {
+        background: #f5f7fa;
+        transform: translateX(5px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
 
-        .answer-options {
-            margin-top: 12px;
-            padding-left: 15px;
-        }
+    .file-name {
+        margin-left: 10px;
+        flex-grow: 1;
+    }
 
-        .answer-option {
-            display: flex;
-            align-items: center;
-            margin-bottom: 8px;
-            padding: 8px;
-            transition: background-color 0.2s;
-            border-radius: 5px;
-        }
+    .file-delete-btn {
+        margin-left: 10px;
+        background: linear-gradient(145deg, #f44336, #e53935);
+        border: none;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.9em;
+    }
 
-        .answer-option:hover {
-            background-color: #f5f5f5;
-        }
+    .file-delete-btn:hover {
+        background: linear-gradient(145deg, #e53935, #d32f2f);
+    }
 
-        .add-quiz-btn {
-            background: linear-gradient(145deg, #2ecc71, #27ae60);
-            margin-top: 30px;
-            display: block;
-            width: fit-content;
-            margin: 30px auto;
-        }
+    .admin-control {
+        display: none; /* По умолчанию скрыто */
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
 
-        .add-quiz-btn:hover {
-            background: linear-gradient(145deg, #27ae60, #219a52);
-        }
+    .edit-mode .admin-control {
+        display: block;
+        opacity: 1;
+    }
 
-        input[type="radio"] {
-            margin-right: 10px;
-            transform: scale(1.2);
-        }
-        .lectures-section {
-            margin: 40px 0;
-        }
+    .quiz-card {
+        background: linear-gradient(145deg, #ffffff, #f8f9fa);
+        border-radius: 15px;
+        padding: 30px;
+        margin-bottom: 25px;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.06);
+        transition: all 0.3s ease;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
 
-        .lecture-card {
-            background: linear-gradient(145deg, #ffffff, #f8f9fa);
-            border-radius: 15px;
-            margin-bottom: 20px;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.06);
-            overflow: hidden;
-        }
+    .quiz-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+    }
 
-        .lecture-header {
-            padding: 20px;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: linear-gradient(145deg, #f8f9fa, #f1f3f5);
-            transition: background 0.3s ease;
-        }
+    .toggle-icon {
+        transition: transform 0.3s ease;
+    }
+    .admin-control {
+        display: none;
+        opacity: 0;
+        position: absolute; /* Add this */
+        visibility: hidden; /* Add this */
+        transition: opacity 0.3s ease;
+    }
 
-        .lecture-header:hover {
-            background: linear-gradient(145deg, #f1f3f5, #e9ecef);
-        }
+    .edit-mode .admin-control {
+        display: inline-block;
+        opacity: 1;
+        position: static; /* Add this */
+        visibility: visible; /* Add this */
+    }
+    .file-upload-section {
+    margin-top: 20px;
+    padding: 15px;
+    background: rgba(63, 81, 181, 0.05);
+    border-radius: 8px;
+    }
 
-        .lecture-title {
-            margin: 0;
-            color: #1a237e;
-            font-size: 1.3em;
-        }
+    .file-upload-form {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
 
-        .toggle-icon {
-            transition: transform 0.3s ease;
-        }
+    .file-input {
+        padding: 8px;
+        border: 1px solid #e0e0e0;
+        border-radius: 4px;
+        flex-grow: 1;
+    }
 
-        .lecture-content {
-            padding: 0 20px;
-            max-height: 0;
-            overflow: hidden;
-            transition: all 0.3s ease;
-        }
+    .file-name-input {
+        padding: 10px;
+        border: 1px solid #e0e0e0;
+        border-radius: 4px;
+        min-width: 200px;
+    }
 
-        .lecture-content.active {
-            padding: 20px;
-            max-height: 1000px;
-        }
+    .upload-btn {
+        background: linear-gradient(145deg, #4caf50, #45a049);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 1em;
+        transition: all 0.3s ease;
+    }
 
-        .add-lecture-btn {
-            background: linear-gradient(145deg, #3f51b5, #3949ab);
-            margin-top: 30px;
-            display: block;
-            width: fit-content;
-            margin: 30px auto;
-        }
+    .upload-btn:hover {
+        background: linear-gradient(145deg, #45a049, #3d8b40);
+    }
+    .main-container {
+        width: 80%;
+        margin: 0 auto;
+        max-width: 1200px;
+    }
+    .add-lecture-btn {
+        background: linear-gradient(145deg, #3f51b5, #3949ab);
+        color: white;
+        padding: 12px 24px;
+        border-radius: 8px;
+        margin: 20px 0;
+        display: inline-block;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
 
-        .add-lecture-btn:hover {
-            background: linear-gradient(145deg, #3949ab, #303f9f);
-        }
+    .add-lecture-btn:hover {
+        background: linear-gradient(145deg, #3949ab, #303f9f);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        color: white;
+    }
+    .btn-compact {
+        display: inline-flex;
+        align-items: center;
+        padding: 8px 16px;
+        margin: 5px;
+        font-size: 0.9em;
+        border-radius: 6px;
+        background: linear-gradient(145deg, #f8f9fa, #e9ecef);
+        color: #495057;
+        text-decoration: none;
+        border: 1px solid #dee2e6;
+        transition: all 0.3s ease;
+    }
 
-        .lecture-files {
-            margin-top: 20px;
-            padding: 15px;
-            background: rgba(63, 81, 181, 0.05);
-            border-radius: 8px;
-        }
+    .btn-compact:hover {
+        background: linear-gradient(145deg, #e9ecef, #dee2e6);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        color: #212529;
+    }
 
-        .file-item {
-            margin: 10px 0;
-        }
+    .btn-compact i {
+        margin-right: 6px;
+    }
+    .add-quiz-btn {
+        background: linear-gradient(145deg, #3f51b5, #3949ab);
+        color: white;
+        padding: 12px 24px;
+        border-radius: 8px;
+        margin: 20px 0;
+        display: inline-block;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
 
-        .file-download-btn {
-            display: flex;
-            align-items: center;
-            padding: 10px 15px;
-            background: white;
-            border: 1px solid #e0e0e0;
-            border-radius: 6px;
-            text-decoration: none;
-            color: #2c3e50;
-            transition: all 0.3s ease;
-        }
-
-        .file-download-btn:hover {
-            background: #f5f7fa;
-            transform: translateX(5px);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-
-        .file-icon {
-            font-size: 1.5em;
-            margin-right: 10px;
-        }
-
-        .file-name {
-            flex-grow: 1;
-        }
-
-        .file-size {
-            color: #666;
-            font-size: 0.9em;
-        }
-        .file-upload-section {
-            margin-top: 20px;
-            padding: 15px;
-            background: rgba(63, 81, 181, 0.05);
-            border-radius: 8px;
-        }
-
-        .file-upload-section {
-            margin-top: 20px;
-            padding: 15px;
-            background: rgba(63, 81, 181, 0.05);
-            border-radius: 8px;
-        }
-
-        .file-upload-form {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .file-input {
-            padding: 8px;
-            border: 1px solid #e0e0e0;
-            border-radius: 4px;
-            flex-grow: 1;
-        }
-
-        .file-name-input {
-            padding: 10px;
-            border: 1px solid #e0e0e0;
-            border-radius: 4px;
-            min-width: 200px;
-        }
-
-        .upload-btn {
-            background: linear-gradient(145deg, #4caf50, #45a049);
-        }
-
-        .upload-btn:hover {
-            background: linear-gradient(145deg, #45a049, #3d8b40);
-        }
-
-        .file-delete-btn {
-            padding: 5px 10px;
-            margin-left: 10px;
-            font-size: 1.2em;
-            line-height: 1;
-        }
-
-        .file-item {
-            display: flex;
-            align-items: center;
-        }
-
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 60px;
-            height: 34px;
-            vertical-align: middle;
-        }
-
-        .switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #ccc;
-            transition: .4s;
-        }
-
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 26px;
-            width: 26px;
-            left: 4px;
-            bottom: 4px;
-            background-color: white;
-            transition: .4s;
-        }
-
-        input:checked + .slider {
-            background-color: #3f51b5;
-        }
-
-        input:checked + .slider:before {
-            transform: translateX(26px);
-        }
-
-        .slider.round {
-            border-radius: 34px;
-        }
-
-        .slider.round:before {
-            border-radius: 50%;
-        }
-
-        .toggle-label {
-            margin-left: 70px;
-            color: #2c3e50;
-            font-weight: 500;
-        }
-
-        .edit-controls {
-            display: none;
-        }
-
-        .admin-control {
-            display: none;
-            pointer-events: none; /* Disable interaction when hidden */
-            opacity: 0;
-            position: absolute;
-            transition: opacity 0.3s ease;
-        }
-        .edit-mode .admin-control {
-            display: inline-flex;
-            pointer-events: auto; /* Re-enable interaction in edit mode */
-            opacity: 1;
-            position: relative;
-        }
-        body {
-        margin-left: 80px;
-        }
-
-        .side-menu {
-            position: fixed;
-            left: 0;
-            top: 0;
-            width: 80px;
-            height: 80vh;
-            background: linear-gradient(145deg, #1a237e, #3949ab);
-            color: white;
-            padding: 20px 0;
-            box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
-            z-index: 1000;
-            border-bottom-right-radius: 25px;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .menu-header {
-            text-align: center;
-            padding: 20px 0;
-        }
-
-        .logo {
-            font-size: 24px;
-            font-weight: bold;
-            color: white;
-            letter-spacing: 2px;
-            font-family: 'Roboto', sans-serif;
-        }
-
-        .side-menu nav {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 30px;
-        }
-
-        .menu-item {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 50px;
-            height: 50px;
-            color: white;
-            text-decoration: none;
-            transition: all 0.3s ease;
-            border-radius: 50%;
-        }
-
-        .menu-item:hover {
-            background: rgba(255, 255, 255, 0.1);
-            transform: scale(1.1);
-        }
-
-        .menu-item i {
-            font-size: 1.5em;
-        }
-
-        .main-content {
-            width: 100%;
-            max-width: 1400px;
-            margin-left: 120px;
-            padding: 30px;
-        }
-
-        .btn-compact {
-            padding: 8px 16px;
-            font-size: 0.9em;
-            width: fit-content;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            max-width: 200px;
-        }
-        
+    .add-quiz-btn:hover {
+        background: linear-gradient(145deg, #3949ab, #303f9f);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        color: white;
+    }
     </style>
-</head>
-<body>
-    {% csrf_token %}
-
-    <div class="side-menu">
-        <div class="menu-header">
-            <div class="logo">EDDS</div>
-        </div>
-        <nav>
-            <a href="{% url 'dashboard' %}" class="menu-item" title="Личный кабинет" aria-label="Перейти в личный кабинет">
-                <i class="fas fa-user"></i>
-            </a>
-            <a href="{% url 'course_list' %}" class="menu-item" title="Все курсы" aria-label="Перейти ко всем курсам">
-                <i class="fas fa-graduation-cap"></i>
-            </a>
-        </nav>
+{% csrf_token %}
+<div class="main-container">
+<div class="course-container">
+    {% if profile.role == 'admin' or course.instructor == user %}
+    <div class="edit-toggle-container" style="text-align: right; margin-bottom: 20px;">
+        <label class="switch">
+            <input type="checkbox" id="editModeToggle" aria-label="Включить режим редактирования">
+            <span class="slider round"></span>
+            <span class="toggle-label">Режим редактирования</span>
+        </label>
     </div>
-    
-          <div class="main-content">
-              <div class="course-container">
-                  {% if profile.role == 'admin' or course.instructor == user %}
-                  <div class="edit-toggle-container" style="text-align: right; margin-bottom: 20px; margin-right: 50px;">
-                      <label class="switch">
-                          <input type="checkbox" id="editModeToggle" aria-label="Включить режим редактирования">
-                          <span class="slider round"></span>
-                          <span class="toggle-label">Режим редактирования</span>
-                      </label>
-                  </div>
-                  {% endif %}
+    {% endif %}
 
-                  <h1 class="course-title">{{ course.title }}</h1>
-                  <p>{{ course.description }}</p>
-        
-                  {% if profile.role == 'admin' or course.instructor == user %}
-                      <a href="{% url 'edit_course' course.id %}" class="btn btn-compact admin-control">
-                          <i class="fas fa-edit"></i> Изменить курс
-                      </a>
-                  {% endif %}
-              </div>
+    <h1 class="course-title">{{ course.title }}</h1>
+    <p>{{ course.description }}</p>
 
-              <div class="lectures-section">
-                  <h2 style="text-align:center;">Лекции курса</h2>
-                  {% for lecture in course.lectures.all %}
-                      <div class="lecture-card">
-                          <div class="lecture-header" onclick="toggleLecture({{ lecture.id }})" role="button" aria-expanded="false">
-                              <h3 class="lecture-title">{{ lecture.title }}</h3>
-                              <span class="toggle-icon">▼</span>
-                          </div>
-                          <div class="lecture-content" id="lecture-{{ lecture.id }}">
-                              {{ lecture.content|safe }}
-                              <div class="lecture-controls">
-                                  {% if profile.role == 'instructor' or profile.role == 'admin' %}
-                                  <a href="{% url 'edit_lecture' course.id lecture.id %}" class="btn btn-compact admin-control">
-                                    <i class="fas fa-edit"></i> Редактировать лекцию
-                                </a>
+    {% if profile.role == 'admin' or course.instructor == user %}
+    <a href="{% url 'edit_course' course.id %}" class="btn btn-compact admin-control">
+        <i class="fas fa-edit"></i> Изменить курс
+    </a>
+    {% endif %}
+</div>
 
-                                  {% endif %}
-                                  {% if profile.role == 'instructor' or profile.role == 'admin' %}
-                                      <a href="{% url 'upload_file' lecture.id %}" class="btn btn-compact admin-control" aria-label="Загрузить файл к лекции">Загрузить файл</a>
-                                  {% endif %}
-                              </div>
+<div class="lectures-section">
+    <h2 style="text-align:center;">Лекции курса</h2>
+    <a href="{% url 'create_lecture' course.id %}" class="btn add-lecture-btn admin-control" aria-label="Добавить новую лекцию">
+        Добавить лекцию
+    </a>
+    {% for lecture in course.lectures.all %}
+    <div class="lecture-card">
+        <div class="lecture-header" onclick="toggleLecture({{ lecture.id }})" role="button" aria-expanded="false">
+            <h3 class="lecture-title">{{ lecture.title }}</h3>
+            <span class="toggle-icon" id="icon-{{ lecture.id }}">▼</span>
+        </div>
+        <div class="lecture-content" id="lecture-{{ lecture.id }}">
+            {{ lecture.content|safe }}
 
-                              {% if lecture.files.all %}
-                                      {% for file in lecture.files.all %}
-                                      <div class="file-item" data-file-id="{{ file.id }}">
-                                          <a href="{{ file.file.url }}" class="file-download-btn" target="_blank" aria-label="Скачать {{ file.name }}">
-                                              <span class="file-icon">📄</span>
-                                              <span class="file-name">{{ file.name }}</span>
-                                          </a>
-                                          {% if profile.role == 'instructor' or profile.role == 'admin' %}
-                                              <button onclick="deleteFile({{ file.id }})" class="btn delete-btn file-delete-btn admin-control" aria-label="Удалить файл">×</button>
-                                          {% endif %}
-                                      </div>
-                                      {% endfor %}
-                                  </div>
-                              {% endif %}
-                          </div>
-                      </div>
-                  {% endfor %}
-        
-                  {% if profile.role == 'admin' or course.instructor == user %}
-                      <a href="{% url 'create_lecture' course.id %}" class="btn add-lecture-btn admin-control" aria-label="Добавить новую лекцию">Добавить лекцию</a>
-                  {% endif %}
+            <h4>Файлы</h4>
+            {% if profile.role == 'admin' or profile.role == 'instructor' %}
+                        <div class="file-upload-section admin-control">
+                            <form class="file-upload-form admin-control" method="post" enctype="multipart/form-data" data-lecture-id="{{ lecture.id }}">
+                                {% csrf_token %}
+                                <input type="file" name="file" class="file-input admin-control" required aria-label="Выберите файл для загрузки">
+                                <input type="text" name="file_name" class="file-name-input admin-control" placeholder="Имя файла (опционально)">
+                                <button type="submit" class="btn upload-btn admin-control">Загрузить файл</button>
+                            </form>
+                        </div>
+            {% endif %}
+            {% if lecture.files.all %}
+            <div class="lecture-files">
+                {% for file in lecture.files.all %}
+                <div class="file-item" data-file-id="{{ file.id }}">
+                    <a href="{{ file.file.url }}" class="file-download-btn" target="_blank" aria-label="Скачать {{ file.name }}">
+                        <span class="file-icon">📄</span>
+                        <span class="file-name">{{ file.name }}</span>
+                    </a>
+                    {% if profile.role == 'admin' or profile.role == 'instructor' %}
+                    <button onclick="deleteFile({{ file.id }})" class="btn file-delete-btn admin-control">
+                        Удалить
+                    </button>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p>Нет доступных файлов для этой лекции.</p>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
 
-              <div class="quiz-section">
-                  <h2 style="text-align:center;">Тесты курса</h2>
-                  {% if profile.role == 'admin' or course.instructor == user %}
-                      <a href="{% url 'add_quiz' course.id %}" class="btn add-quiz-btn admin-control" aria-label="Добавить новый тест">Добавить тест</a>
-                  {% endif %}
-                  {% for quiz in course.quizzes.all %}
-                      <div class="quiz-card" id="quiz-{{ quiz.id }}">
-                          <h3 class="quiz-title">{{ quiz.title }}</h3>
-                
-                          {% if profile.role == 'instructor' and course.instructor == user or profile.role == 'admin' %}
-                              <a href="{% url 'edit_quiz' quiz.id %}" class="btn btn-compact admin-control" aria-label="Редактировать тест">
-                                  <i class="fas fa-edit"></i> Редактировать
-                              </a>
-                              <button onclick="deleteQuiz({{ quiz.id }})" class="btn btn-compact delete-btn admin-control" aria-label="Удалить тест">
-                                  <i class="fas fa-trash"></i> Удалить
-                              </button>
-                          {% endif %}
-                          {% if quiz|has_quiz_result:user %}
-                              <div class="quiz-result">
-                                  Тест пройден: {{ quiz|get_quiz_score:user }}
-                              </div>
-                          {% else %}
-                              <form class="quiz-form" data-quiz-id="{{ quiz.id }}" action="{% url 'submit_quiz' quiz.id %}" method="post" style="width:100%">
-                                  {% csrf_token %}
-                                  {% for question in quiz.questions.all %}
-                                      <div class="question">
-                                          <p>{{ question.text }}</p>
-                                          <div class="answer-options">
-                                              {% for answer in question.answers.all %}
-                                                  <label class="answer-option">
-                                                      <input type="radio" name="question_{{ question.id }}" value="{{ answer.text }}" required>
-                                                      {{ answer.text }}
-                                                  </label>
-                                              {% endfor %}
-                                          </div>
-                                      </div>
-                                  {% endfor %}
-                                  <button type="submit" class="btn" aria-label="Отправить ответы на тест">Отправить ответы</button>
-                              </form>
-                          {% endif %}
-                      </div>
-                  {% endfor %}
-              </div>
-          </div>
-    <script>
-        function toggleLecture(lectureId) {
-            const content = document.getElementById(`lecture-${lectureId}`);
-            const icon = content.previousElementSibling.querySelector('.toggle-icon');
-            
-            content.classList.toggle('active');
-            if (content.classList.contains('active')) {
-                icon.style.transform = 'rotate(180deg)';
+<div class="quiz-section">
+    <h2 style="text-align:center;">Тесты курса</h2>
+    <a href="{% url 'add_quiz' course.id %}" class="btn add-quiz-btn admin-control" aria-label="Добавить новый тест">
+        Добавить тест
+    </a>
+    {% for quiz in course.quizzes.all %}
+    <div class="quiz-card" id="quiz-{{ quiz.id }}">
+        <h3 class="quiz-title">{{ quiz.title }}</h3>
+        {% if profile.role == 'instructor' and course.instructor == user or profile.role == 'admin' %}
+        <a href="{% url 'edit_quiz' quiz.id %}" class="btn btn-compact admin-control">
+            <i class="fas fa-edit"></i> Редактировать
+        </a>
+        <button onclick="deleteQuiz({{ quiz.id }})" class="btn btn-compact delete-btn admin-control">
+            <i class="fas fa-trash"></i> Удалить
+        </button>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+</div>
+
+<script>
+    // Логика режима редактирования
+    document.addEventListener('DOMContentLoaded', () => {
+        const editModeToggle = document.getElementById('editModeToggle');
+        const body = document.body;
+
+        editModeToggle?.addEventListener('change', function () {
+            if (this.checked) {
+                body.classList.add('edit-mode');
             } else {
-                icon.style.transform = 'rotate(0deg)';
+                body.classList.remove('edit-mode');
             }
-        }
-        </script>
-        
-    <script>
-        // AJAX-обработка формы отправки теста
-        document.querySelectorAll('.quiz-form').forEach(form => {
-            form.addEventListener('submit', function(event) {
-                event.preventDefault(); // Предотвращение перезагрузки страницы
-
-                const quizId = this.getAttribute('data-quiz-id');
-                const formData = new FormData(this);
-                
-                fetch(this.action, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        // Создаем элемент для отображения результата
-                        const resultDiv = document.createElement('div');
-                        resultDiv.className = 'quiz-result';
-                        resultDiv.textContent = `Тест пройден: ${data.score}`;
-
-                        // Заменяем форму на результат
-                        this.replaceWith(resultDiv);
-                    } else {
-                        alert(data.message || 'Ошибка при отправке ответов.');
-                    }
-                })
-                .catch(error => console.error('Ошибка:', error));
-            });
         });
+    });
 
-        function deleteQuiz(quizId) {
-            if (confirm('Вы уверены, что хотите удалить этот тест?')) {
-                fetch(`/delete_quiz/${quizId}/`, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                    }
-                })
-                .then(response => {
-                    if (response.ok) {
-                        const quizCard = document.getElementById(`quiz-${quizId}`);
-                        quizCard.remove();
-                    } else {
-                        alert('Ошибка при удалении теста.');
-                    }
-                });
-            }
-        }
-    </script>
-    <script>
-        document.querySelectorAll('.file-upload-form').forEach(form => {
-            form.addEventListener('submit', function(e) {
-                e.preventDefault();
-                const lectureId = this.getAttribute('data-lecture-id');
-                const formData = new FormData(this);
-        
-                fetch(`/upload_lecture_file/${lectureId}/`, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        location.reload();
-                    } else {
-                        alert('Ошибка при загрузке файла');
-                    }
-                });
+
+    document.getElementById('editModeToggle')?.addEventListener('change', function() {
+        setTimeout(() => {
+            document.querySelectorAll('.lecture-content.active').forEach(content => {
+                content.style.maxHeight = content.scrollHeight + "px";
             });
-        });
-        
-        function deleteFile(fileId) {
-            if (confirm('Вы уверены, что хотите удалить этот файл?')) {
-                fetch(`/delete_lecture_file/${fileId}/`, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        const fileElement = document.querySelector(`[data-file-id="${fileId}"]`);
-                        if (fileElement) {
-                            fileElement.remove();
-                        }
-                    }
-                })
-                .catch(error => console.error('Error:', error));
-            }
+        }, 50);
+    });
+
+    function toggleLecture(lectureId) {
+        const content = document.getElementById(`lecture-${lectureId}`);
+        const icon = document.getElementById(`icon-${lectureId}`);
+
+        if (content.classList.contains('active')) {
+            content.classList.remove('active');
+            content.style.maxHeight = null;
+            icon.classList.remove('open');
+        } else {
+            content.classList.add('active');
+            setTimeout(() => {
+                const totalHeight = content.scrollHeight;
+                content.style.maxHeight = totalHeight + "px";
+            }, 50);
+            icon.classList.add('open');
         }
+    }
 
 
-        </script>
-        <script>
-            const editModeToggle = document.getElementById('editModeToggle');
-            const courseContainer = document.querySelector('body');
-            
-            editModeToggle.addEventListener('change', function() {
-                if (this.checked) {
-                    courseContainer.classList.add('edit-mode');
-                    document.querySelectorAll('.admin-control').forEach(control => {
-                        control.style.display = 'block';
-                        setTimeout(() => control.style.opacity = '1', 10);
-                    });
-                } else {
-                    courseContainer.classList.remove('edit-mode');
-                    document.querySelectorAll('.admin-control').forEach(control => {
-                        control.style.opacity = '0';
-                        setTimeout(() => control.style.display = 'none', 300);
-                    });
+    // Инициализация: закрываем все лекции при загрузке
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.lecture-content').forEach(content => {
+            content.style.maxHeight = null;
+        });
+    });
+
+    // Логика удаления теста
+    function deleteQuiz(quizId) {
+        if (confirm('Вы уверены, что хотите удалить этот тест?')) {
+            fetch(`/delete_quiz/${quizId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
                 }
-            });
-        </script>
-</body>
-</html>
+            })
+            .then(response => {
+                if (response.ok) {
+                    const quizCard = document.getElementById(`quiz-${quizId}`);
+                    quizCard.remove();
+                } else {
+                    alert('Ошибка при удалении теста.');
+                }
+            })
+            .catch(error => console.error('Ошибка при удалении теста:', error));
+        }
+    }
+
+    document.querySelectorAll('.file-upload-form').forEach(form => {
+    form.addEventListener('submit', function (e) {
+        e.preventDefault(); // Предотвращение перезагрузки страницы
+        
+
+        const lectureId = this.getAttribute('data-lecture-id'); // ID лекции
+        const formData = new FormData(this); // Данные формы
+
+        fetch(`/upload_lecture_file/${lectureId}/`, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                alert('Файл успешно загружен!');
+                location.reload(); // Перезагрузка страницы для обновления списка файлов
+            } else {
+                alert(data.message || 'Ошибка при загрузке файла.');
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            alert('Произошла ошибка при загрузке файла.');
+        });
+    });
+});
+    // Логика удаления файла
+    function deleteFile(fileId) {
+    if (confirm('Вы уверены, что хотите удалить этот файл?')) {
+        fetch(`/delete_lecture_file/${fileId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ file_id: fileId }),
+        })
+        .then(response => {
+            if (response.ok) {
+                return response.json();
+            } else {
+                throw new Error('Ошибка при удалении файла. Проверьте, существует ли указанный файл.');
+            }
+        })
+        .then(data => {
+            if (data.status === 'success') {
+                const fileElement = document.querySelector(`[data-file-id="${fileId}"]`);
+                if (fileElement) {
+                    fileElement.remove();
+                }
+                alert('Файл успешно удалён.');
+            } else {
+                alert(data.message || 'Ошибка при удалении файла.');
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            alert('Произошла ошибка при удалении файла. Попробуйте ещё раз.');
+        });
+    }
+}
+
+</script>
+{% endblock %}

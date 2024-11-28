@@ -4,12 +4,18 @@ from .utils import role_required
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import authenticate,login
 from django.shortcuts import render, redirect
-from .models import Course, Profile, Quiz, Question, Answer, QuizResult, LectureFile, Lecture
+from .models import Course, Profile, Quiz, Question, Answer, QuizResult, LectureFile, Lecture, CourseVisit, QuizCompletion
 from django.contrib.auth.decorators import login_required, instructor_course_required
 from django.contrib.auth.models import User
 from .forms import CourseForm, LectureForm, QuizForm, QuestionForm, AnswerForm, LectureFileForm
 from django.http import JsonResponse
 from django.contrib import messages
+from django.views.decorators.csrf import csrf_exempt
+from django.core.files.storage import default_storage
+from django.utils import timezone
+from .models import Lecture, LectureVisit
+from django.db.models import Count
+import json
 
 def anonymous_required(function=None):
     def wrapper(request, *args, **kwargs):
@@ -34,29 +40,52 @@ def edit_course(request, course_id):
 
 @login_required
 @role_required('instructor', 'admin')
-def upload_file(request, lecture_id):
-    lecture = get_object_or_404(Lecture, id=lecture_id)
+@csrf_exempt
+def upload_lecture_file(request, lecture_id):
     if request.method == 'POST':
-        form = LectureFileForm(request.POST, request.FILES)
-        if form.is_valid():
-            lecture_file = form.save(commit=False)
-            lecture_file.lecture = lecture
+        try:
+            lecture = Lecture.objects.get(id=lecture_id)
+            file = request.FILES.get('file')
+            file_name = request.POST.get('file_name', file.name)
+
+            if not file:
+                return JsonResponse({'status': 'error', 'message': 'Файл не указан.'}, status=400)
+
+            lecture_file = LectureFile.objects.create(
+                lecture=lecture,
+                file=file,
+                name=file_name
+            )
             lecture_file.save()
-            return redirect('course_detail', course_id=lecture.course.id)
-    else:
-        form = LectureFileForm()
-    
-    return render(request, 'training/upload_file.html', {'form': form, 'lecture': lecture})
+
+            return JsonResponse({'status': 'success', 'message': 'Файл успешно загружен.'})
+        except Lecture.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Лекция не найдена.'}, status=404)
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': f'Ошибка: {str(e)}'}, status=500)
+    return JsonResponse({'status': 'error', 'message': 'Метод не разрешён.'}, status=405)
 
 
 @login_required
 @role_required('instructor', 'admin')
+@csrf_exempt
 def delete_lecture_file(request, file_id):
-    if request.method == 'POST':
-        file = get_object_or_404(LectureFile, id=file_id)
-        file.delete()
-        return JsonResponse({'status': 'success'})
-    return JsonResponse({'status': 'error'})
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            file_id = data.get("file_id")
+
+            if not file_id:
+                return JsonResponse({"status": "error", "message": "ID файла не указан."}, status=400)
+
+            file = LectureFile.objects.get(id=file_id)
+            file.delete()
+            return JsonResponse({"status": "success", "message": "Файл удалён."})
+        except LectureFile.DoesNotExist:
+            return JsonResponse({"status": "error", "message": "Файл не найден."}, status=404)
+        except Exception as e:
+            return JsonResponse({"status": "error", "message": str(e)}, status=500)
+    return JsonResponse({"status": "error", "message": "Метод не разрешён."}, status=405)
 
 
 @login_required
@@ -243,12 +272,21 @@ def take_quiz(request, quiz_id):
                     score += 1
 
         percentage_score = (score / total_questions) * 100
+        
+        # Record completion
+        QuizCompletion.objects.create(
+            quiz=quiz,
+            user=request.user,
+            score=percentage_score
+        )
+        
         return render(request, 'quiz/quiz_result.html', {
             'quiz': quiz,
             'score': score,
             'total_questions': total_questions,
             'percentage_score': percentage_score
         })
+    
 
     return render(request, 'quiz/take_quiz.html', {'quiz': quiz})
 
@@ -282,17 +320,38 @@ def create_course(request):
 
 @login_required
 def dashboard(request):
+    from django.db.models import Count, Min
+
     user = request.user
     profile = request.user.profile
     courses = Course.objects.all()
     user_results = QuizResult.objects.filter(user=user)
     progress_data = {result.quiz.id: result.score for result in user_results}
 
+    courses = Course.objects.annotate(
+        total_visits=Count('coursevisit'),
+        unique_visitors=Count('coursevisit__user', distinct=True)
+    ).prefetch_related('coursevisit_set')
+    
+    course_visitors = CourseVisit.objects.values(
+        'course__title', 
+        'user__username'
+    ).distinct()
+    
+    unique_visits = CourseVisit.objects.select_related('course', 'user').values(
+            'course__title', 
+            'user__username'
+        ).annotate(
+            first_visit=Min('visit_date')
+        ).order_by('course__title', 'user__username')
     context = {
         'user': user,
+        'total_visits': CourseVisit.objects.count(),
         'profile': profile,
         'courses': courses,
         'progress_data': progress_data,
+        'course_visits': course_visitors,
+        'unique_visits': unique_visits,
         'instructor_courses': Course.objects.filter(instructor=request.user)
     }
 
@@ -308,8 +367,16 @@ def course_list(request):
 def course_detail(request, course_id):
     course = get_object_or_404(Course, id=course_id)
     profile = request.user.profile 
+    lectures = course.lectures.all() 
+
+    CourseVisit.objects.create(
+        course=course,
+        user=request.user
+    )
+
     context = {
         'course': course,
+        'lectures': lectures,
         'profile': profile,
     }
     return render(request, 'training/course_detail.html', context)
@@ -374,3 +441,13 @@ def create_lecture(request, course_id):
     else:
         form = LectureForm()
     return render(request, 'training/create_lecture.html', {'form': form, 'course': course})
+
+def lecture_detail(request, lecture_id):
+    lecture = get_object_or_404(Lecture, id=lecture_id)
+    # Create visit record
+    LectureVisit.objects.create(
+        lecture=lecture,
+        user=request.user
+    )
+    visit_count = LectureVisit.objects.filter(lecture=lecture).count()
+    # Rest of your view logic

@@ -34,10 +34,9 @@ urlpatterns = [
     path('delete_quiz/<int:quiz_id>/', views.delete_quiz, name='delete_quiz'),
     # Лекции
     path('course/<int:course_id>/create_lecture/', views.create_lecture, name='create_lecture'),
-    path('lecture/<int:lecture_id>/upload/', views.upload_file, name='upload_file'),
     path('delete_lecture_file/<int:file_id>/', views.delete_lecture_file, name='delete_lecture_file'),
     path('course/<int:course_id>/lecture/<int:lecture_id>/edit/', views.edit_lecture, name='edit_lecture'),
-
+    path('upload_lecture_file/<int:lecture_id>/', views.upload_lecture_file, name='upload_lecture_file'),
 
 
 
