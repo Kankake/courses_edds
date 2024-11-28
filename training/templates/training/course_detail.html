@@ -265,6 +265,25 @@
         box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
         color: white;
     }
+    .quiz-description {
+        margin: 10px 0;
+        color: #666;
+    }
+
+    .quiz-stats {
+        margin: 15px 0;
+        padding: 10px;
+        background: rgba(63, 81, 181, 0.05);
+        border-radius: 8px;
+    }
+
+    .quiz-actions {
+        margin-top: 15px;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
     </style>
 {% csrf_token %}
 <div class="main-container">
@@ -346,6 +365,26 @@
     {% for quiz in course.quizzes.all %}
     <div class="quiz-card" id="quiz-{{ quiz.id }}">
         <h3 class="quiz-title">{{ quiz.title }}</h3>
+        <div class="quiz-stats">
+            <p>Количество вопросов: {{ quiz.questions.count }}</p>
+            <p>Время на прохождение: {{ quiz.time_limit }} минут</p>
+        </div>
+    
+        <!-- Quiz Actions -->
+        <div class="quiz-actions">
+            <a href="{% url 'take_quiz' quiz.id %}" class="btn btn-compact">
+                <i class="fas fa-play"></i> Начать тест
+            </a>
+            
+            {% if profile.role == 'instructor' and course.instructor == user or profile.role == 'admin' %}
+            <a href="{% url 'edit_quiz' quiz.id %}" class="btn btn-compact admin-control">
+                <i class="fas fa-edit"></i> Редактировать
+            </a>
+            <button onclick="deleteQuiz({{ quiz.id }})" class="btn btn-compact delete-btn admin-control">
+                <i class="fas fa-trash"></i> Удалить
+            </button>
+            {% endif %}
+        </div>
         {% if profile.role == 'instructor' and course.instructor == user or profile.role == 'admin' %}
         <a href="{% url 'edit_quiz' quiz.id %}" class="btn btn-compact admin-control">
             <i class="fas fa-edit"></i> Редактировать

@@ -15,6 +15,15 @@ from django.core.files.storage import default_storage
 from django.utils import timezone
 from .models import Lecture, LectureVisit
 from django.db.models import Count
+from .models import QuizAttempt
+import xml.etree.ElementTree as ET
+from django.http import HttpResponse, JsonResponse
+import xml.etree.ElementTree as ET
+import csv
+import json
+import xlsxwriter
+from io import BytesIO
+from django.utils import timezone
 import json
 
 def anonymous_required(function=None):
@@ -119,6 +128,106 @@ def login_view(request):
             messages.error(request, 'Неверное имя пользователя или пароль')
     
     return render(request, 'registration/login.html')
+
+def export_course_stats(request, course_id, format):
+    course = Course.objects.get(id=course_id)
+    
+    if format == 'xml':
+        return export_xml(course)
+    elif format == 'json':
+        return export_json(course)
+    elif format == 'csv':
+        return export_csv(course)
+    elif format == 'excel':
+        return export_excel(course)
+
+def export_xml(course):
+    root = ET.Element("course_statistics")
+    course_elem = ET.SubElement(root, "course")
+    ET.SubElement(course_elem, "title").text = course.title
+    ET.SubElement(course_elem, "visits_count").text = str(course.coursevisit_set.count())
+    
+    quizzes = ET.SubElement(course_elem, "quizzes")
+    for quiz in course.quizzes.all():
+        quiz_elem = ET.SubElement(quizzes, "quiz")
+        ET.SubElement(quiz_elem, "title").text = quiz.title
+        attempts = ET.SubElement(quiz_elem, "attempts")
+        for attempt in quiz.attempts.all():
+            attempt_elem = ET.SubElement(attempts, "attempt")
+            ET.SubElement(attempt_elem, "student").text = attempt.user.username
+            ET.SubElement(attempt_elem, "score").text = str(attempt.score)
+            ET.SubElement(attempt_elem, "date").text = attempt.created_at.strftime("%Y-%m-%d %H:%M:%S")
+
+    response = HttpResponse(content_type='application/xml')
+    response['Content-Disposition'] = f'attachment; filename="course_{course.id}_stats.xml"'
+    ET.ElementTree(root).write(response, encoding='unicode', xml_declaration=True)
+    return response
+
+def export_json(course):
+    data = {
+        'course': {
+            'title': course.title,
+            'visits_count': course.coursevisit_set.count(),
+            'quizzes': [{
+                'title': quiz.title,
+                'attempts': [{
+                    'student': attempt.user.username,
+                    'score': attempt.score,
+                    'date': attempt.created_at.strftime("%Y-%m-%d %H:%M:%S")
+                } for attempt in quiz.attempts.all()]
+            } for quiz in course.quizzes.all()]
+        }
+    }
+    response = HttpResponse(json.dumps(data, indent=2), content_type='application/json')
+    response['Content-Disposition'] = f'attachment; filename="course_{course.id}_stats.json"'
+    return response
+
+def export_csv(course):
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="course_{course.id}_stats.csv"'
+    
+    writer = csv.writer(response)
+    writer.writerow(['Course', 'Quiz', 'Student', 'Score', 'Date'])
+    
+    for quiz in course.quizzes.all():
+        for attempt in quiz.attempts.all():
+            writer.writerow([
+                course.title,
+                quiz.title,
+                attempt.user.username,
+                attempt.score,
+                attempt.created_at.strftime("%Y-%m-%d %H:%M:%S")
+            ])
+    return response
+
+def export_excel(course):
+    output = BytesIO()
+    workbook = xlsxwriter.Workbook(output)
+    worksheet = workbook.add_worksheet()
+
+    # Заголовки
+    headers = ['Course', 'Quiz', 'Student', 'Score', 'Date']
+    for col, header in enumerate(headers):
+        worksheet.write(0, col, header)
+
+    # Данные
+    row = 1
+    for quiz in course.quizzes.all():
+        for attempt in quiz.attempts.all():
+            worksheet.write(row, 0, course.title)
+            worksheet.write(row, 1, quiz.title)
+            worksheet.write(row, 2, attempt.user.username)
+            worksheet.write(row, 3, attempt.score)
+            worksheet.write(row, 4, attempt.created_at.strftime("%Y-%m-%d %H:%M:%S"))
+            row += 1
+
+    workbook.close()
+    output.seek(0)
+
+    response = HttpResponse(output.read(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename="course_{course.id}_stats.xlsx"'
+    return response
+
 
 @login_required
 def submit_quiz(request, quiz_id):
@@ -279,6 +388,13 @@ def take_quiz(request, quiz_id):
             user=request.user,
             score=percentage_score
         )
+
+        QuizAttempt.objects.create(
+            quiz=quiz,
+            user=request.user,
+            score=percentage_score
+        )
+
         
         return render(request, 'quiz/quiz_result.html', {
             'quiz': quiz,
@@ -290,7 +406,6 @@ def take_quiz(request, quiz_id):
 
     return render(request, 'quiz/take_quiz.html', {'quiz': quiz})
 
-@login_required
 @role_required('admin')
 def admin_dashboard(request):
     courses = Course.objects.all()
@@ -352,7 +467,11 @@ def dashboard(request):
         'progress_data': progress_data,
         'course_visits': course_visitors,
         'unique_visits': unique_visits,
-        'instructor_courses': Course.objects.filter(instructor=request.user)
+        'instructor_courses': Course.objects.filter(instructor=request.user).prefetch_related(
+            'quizzes',
+            'quizzes__attempts',
+            'quizzes__attempts__user'
+        )
     }
 
     return render(request, 'training/dashboard.html', context)
